@@ -1,0 +1,36 @@
+<!--pages/history/history.wxml-->
+<view class="container">
+  <view class="card">
+    <view class="section-title">操作记录（最近15次）</view>
+    <view class="hint">点击记录可恢复到该状态</view>
+    <view wx:if="{{snapshots.length === 0}}" class="empty-state">
+      <view class="empty-icon">📝</view>
+      <view>暂无操作记录</view>
+    </view>
+    <view wx:else>
+      <view
+        class="snapshot-item {{item.isCurrent ? 'current' : ''}}"
+        wx:for="{{snapshots}}"
+        wx:key="index"
+        bindtap="restoreSnapshot"
+        data-index="{{index}}"
+      >
+        <view class="snapshot-left">
+          <view class="snapshot-dot {{item.isCurrent ? 'dot-current' : ''}}"></view>
+          <view class="snapshot-line" wx:if="{{index < snapshots.length - 1}}"></view>
+        </view>
+        <view class="snapshot-content">
+          <view class="snapshot-desc">
+            <text>{{item.description}}</text>
+            <text class="snapshot-badge" wx:if="{{item.isCurrent}}">当前</text>
+          </view>
+          <view class="snapshot-meta">
+            <text class="snapshot-count">{{item.courseCount}}门课程</text>
+            <text class="snapshot-time">{{item.timeStr}}</text>
+          </view>
+        </view>
+        <view class="snapshot-arrow" wx:if="{{!item.isCurrent}}">›</view>
+      </view>
+    </view>
+  </view>
+</view>

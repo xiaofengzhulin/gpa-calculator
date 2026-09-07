@@ -1,0 +1,147 @@
+<!--pages/login/login.wxml-->
+<view class="container">
+  <!-- 模式切换 -->
+  <view class="mode-tabs">
+    <view class="mode-tab {{importMode === 'auto' ? 'active' : ''}}" bindtap="switchMode" data-mode="auto">
+      <text class="tab-icon">🔗</text>
+      <text>自动导入</text>
+    </view>
+    <view class="mode-tab {{importMode === 'manual' ? 'active' : ''}}" bindtap="switchMode" data-mode="manual">
+      <text class="tab-icon">📋</text>
+      <text>手动粘贴</text>
+    </view>
+  </view>
+
+  <!-- ========== 自动导入模式 ========== -->
+  <block wx:if="{{importMode === 'auto'}}">
+    <!-- 服务器状态 -->
+    <view class="server-status {{serverOnline ? 'online' : 'offline'}}">
+      <view class="status-dot"></view>
+      <text>{{serverOnline ? '服务器已连接' : '服务器未连接'}}</text>
+      <text class="status-hint" wx:if="{{!serverOnline}}">请先启动 server/server.js</text>
+    </view>
+
+    <view class="card">
+      <view class="section-title">教务系统登录</view>
+      <view class="input-group">
+        <text class="input-label">学号</text>
+        <input class="input-field" value="{{username}}" bindinput="onUsernameInput" placeholder="请输入学号" />
+      </view>
+      <view class="input-group">
+        <text class="input-label">密码</text>
+        <input class="input-field input-field-pwd" value="{{password}}" bindinput="onPasswordInput" placeholder="请输入教务系统密码" password="{{!showPassword}}" />
+        <view class="pwd-toggle" bindtap="togglePassword">
+          <text>{{showPassword ? '🙈' : '👁️'}}</text>
+        </view>
+      </view>
+      <view class="input-group" style="border-bottom: none;">
+        <checkbox-group bindchange="onSavePasswordChange">
+          <label class="option-label">
+            <checkbox value="save" checked="{{savePassword}}" />
+            <text>记住密码</text>
+          </label>
+        </checkbox-group>
+        <view class="reset-pwd-hint" bindtap="copyResetLink">
+          <text>忘记密码？点击复制官网链接去重置密码</text>
+          <text class="reset-pwd-url">http://jw.yit.edu.cn/yjlgxy/</text>
+        </view>
+      </view>
+    </view>
+
+    <button
+      class="btn-primary import-btn {{(!username || !password || importing) ? 'disabled' : ''}}"
+      bindtap="autoImport"
+      disabled="{{!username || !password || importing}}"
+    >
+      {{importing ? '正在导入...' : '登录并导入成绩'}}
+    </button>
+
+    <!-- 导入进度 -->
+    <view class="card progress-card" wx:if="{{importing}}">
+      <view class="progress-steps">
+        <view class="progress-step {{importStep >= 1 ? 'done' : ''}}">
+          <view class="step-icon">{{importStep > 1 ? '✓' : '1'}}</view>
+          <text>连接服务器</text>
+        </view>
+        <view class="progress-step {{importStep >= 2 ? 'done' : ''}}">
+          <view class="step-icon">{{importStep > 2 ? '✓' : '2'}}</view>
+          <text>登录教务系统</text>
+        </view>
+        <view class="progress-step {{importStep >= 3 ? 'done' : ''}}">
+          <view class="step-icon">{{importStep > 3 ? '✓' : '3'}}</view>
+          <text>获取成绩数据</text>
+        </view>
+        <view class="progress-step {{importStep >= 4 ? 'done' : ''}}">
+          <view class="step-icon">{{importStep >= 4 ? '✓' : '4'}}</view>
+          <text>导入完成</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ========== 手动粘贴模式 ========== -->
+  <block wx:if="{{importMode === 'manual'}}">
+    <view class="card">
+      <view class="section-title">操作步骤</view>
+      <view class="steps">
+        <view class="step">
+          1. 打开教务系统
+          <text class="step-link" bindtap="copyLink">（http://jw.yit.edu.cn/yjlgxy_jsxsd/）</text>
+          ，进入「课程成绩查询」页面
+        </view>
+        <view class="step">2. 找到「开课时间」下拉框，选择最上方的「全部学期」，然后点击「查询」按钮</view>
+        <view class="step">3. 长按成绩表格，点击「全选」</view>
+        <view class="step">4. 点击「复制」</view>
+        <view class="step">5. 返回小程序，在下方输入框粘贴</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">成绩数据</view>
+      <textarea
+        class="score-input"
+        value="{{scoreText}}"
+        bindinput="onScoreInput"
+        placeholder="在此粘贴成绩内容...&#10;&#10;格式示例：&#10;序号	开课学期	课程编号	课程名称	成绩	成绩标志	学分	总学时	绩点&#10;1	2024-2025-1	ART00200T	美学导论	优		1	16	"
+        maxlength="-1"
+      />
+      <view class="char-count" wx:if="{{scoreText}}">已输入 {{scoreText.length}} 字</view>
+    </view>
+
+    <view class="import-options">
+      <checkbox-group bindchange="onClearExistingChange">
+        <label class="option-label">
+          <checkbox value="clear" checked="{{clearExisting}}" />
+          <text>清除已导入成绩</text>
+        </label>
+      </checkbox-group>
+      <view class="option-hint">{{clearExisting ? '将清除旧数据后导入' : '只添加新课程'}}</view>
+    </view>
+
+    <button class="btn-primary import-btn" bindtap="parseAndImport" disabled="{{!scoreText}}">
+      解析并导入成绩
+    </button>
+  </block>
+
+  <!-- ========== 通用：解析结果 ========== -->
+  <view class="card" wx:if="{{parseResult.show}}">
+    <view class="section-title">导入结果</view>
+    <view class="result-info">成功导入 {{parseResult.count}} 门课程</view>
+    <view class="result-list">
+      <view class="result-item" wx:for="{{parseResult.items}}" wx:key="name">
+        <view class="result-name">{{item.name}}</view>
+        <view class="result-detail">{{item.score || item.grade}} | {{item.credits}}学分</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 自定义错误弹窗 -->
+  <view class="modal" wx:if="{{showErrorModal}}">
+    <view class="modal-mask" bindtap="hideErrorModal"></view>
+    <view class="modal-content">
+      <view class="error-modal-title">{{errorTitle}}</view>
+      <view class="error-modal-msg">{{errorMsg}}</view>
+      <button class="btn-primary" bindtap="hideErrorModal" style="margin-top: 30rpx;">知道了</button>
+    </view>
+  </view>
+</view>

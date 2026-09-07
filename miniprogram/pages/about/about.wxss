@@ -1,0 +1,62 @@
+/* pages/about/about.wxss */
+.header {
+  text-align: center;
+  padding: 60rpx 0 40rpx;
+}
+
+.app-icon {
+  font-size: 120rpx;
+  margin-bottom: 20rpx;
+}
+
+.app-name {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.app-version {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 联系方式 */
+.contact-list {
+  padding: 0;
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.contact-item:last-child {
+  border-bottom: none;
+}
+
+.contact-label {
+  font-size: 30rpx;
+  color: #333;
+}
+
+.contact-value {
+  font-size: 28rpx;
+  color: #4A90E2;
+}
+
+/* 底部版权 */
+.footer {
+  text-align: center;
+  padding: 40rpx 0 60rpx;
+}
+
+.footer-text {
+  display: block;
+  font-size: 22rpx;
+  color: #ccc;
+  line-height: 1.8;
+}

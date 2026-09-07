@@ -1,0 +1,154 @@
+/* pages/statistics/statistics.wxss */
+.stats-overview {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.stats-card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 30rpx 20rpx;
+  margin: 0 10rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.stats-card:first-child {
+  margin-left: 0;
+}
+
+.stats-card:last-child {
+  margin-right: 0;
+}
+
+.stats-number {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #4A90E2;
+  margin-bottom: 10rpx;
+}
+
+.stats-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.range-info {
+  display: flex;
+  justify-content: space-around;
+}
+
+.range-item {
+  text-align: center;
+}
+
+.range-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.range-value {
+  font-size: 48rpx;
+  font-weight: bold;
+}
+
+.range-value.high {
+  color: #52c41a;
+}
+
+.range-value.low {
+  color: #ff7a45;
+}
+
+.distribution-chart {
+  padding: 20rpx 0;
+}
+
+.chart-item {
+  margin-bottom: 30rpx;
+}
+
+.chart-item:last-child {
+  margin-bottom: 0;
+}
+
+.chart-bar-bg {
+  height: 30rpx;
+  background: #f0f0f0;
+  border-radius: 15rpx;
+  overflow: hidden;
+  margin-bottom: 10rpx;
+}
+
+.chart-bar {
+  height: 100%;
+  border-radius: 15rpx;
+  transition: width 0.5s ease;
+}
+
+.chart-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+}
+
+.chart-name {
+  color: #666;
+}
+
+.chart-count {
+  color: #999;
+}
+
+.trend-chart {
+  padding: 20rpx 0;
+}
+
+.trend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.trend-item:last-child {
+  margin-bottom: 0;
+}
+
+.trend-semester {
+  width: 120rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.trend-bar-bg {
+  flex: 1;
+  height: 30rpx;
+  background: #f0f0f0;
+  border-radius: 15rpx;
+  overflow: hidden;
+  margin: 0 20rpx;
+}
+
+.trend-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4A90E2 0%, #67C23A 100%);
+  border-radius: 15rpx;
+  transition: width 0.5s ease;
+}
+
+.trend-gpa {
+  width: 80rpx;
+  text-align: right;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #4A90E2;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: #bbb;
+  margin-top: 10rpx;
+}

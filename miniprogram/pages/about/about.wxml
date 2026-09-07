@@ -1,0 +1,25 @@
+<view class="container">
+  <!-- 头部信息 -->
+  <view class="header">
+    <view class="app-icon">🎓</view>
+    <view class="app-name">绩点计算器</view>
+    <view class="app-version">Version {{version}}</view>
+  </view>
+
+  <!-- 反馈与联系 -->
+  <view class="card">
+    <view class="section-title">反馈与联系</view>
+    <view class="contact-list">
+      <view class="contact-item" bindtap="copyFeedbackEmail">
+        <text class="contact-label">问题反馈</text>
+        <text class="contact-value">2848801752@qq.com ›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 版权信息 -->
+  <view class="footer">
+    <text class="footer-text">Made with ❤️ by 于铠歌</text>
+    <text class="footer-text">© 2026 All Rights Reserved</text>
+  </view>
+</view>

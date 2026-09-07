@@ -1,0 +1,36 @@
+# ============================================
+# 绩点计算器 - Git 忽略规则
+# ============================================
+
+# ---- 敏感文件：包含教务系统账号密码，禁止上传 ----
+diagnose_login.py
+fetch_scores.py
+运行抓取成绩.bat
+
+# ---- 调试/抓取脚本（含历史尝试，不入库）----
+*.py
+*.bat
+
+# ---- 调试输出与测试文件 ----
+*.txt
+!README.md
+!LICENSE
+node_test.txt
+python_output.txt
+font_base64_output.txt
+
+# ---- 微信开发者工具个人配置（含本地设置，不入库）----
+project.private.config.json
+
+# ---- 字体资源（体积大/占位，按需另行管理）----
+miniprogram/fonts/font_base64.txt
+miniprogram/fonts/placeholder.txt
+
+# ---- 系统文件 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Node ----
+node_modules/
+*.log

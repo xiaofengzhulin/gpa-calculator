@@ -1,0 +1,185 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- GPA结果展示 -->
+  <view class="result-box card">
+    <view class="result-header">
+      <view class="result-label">{{filterSemester === '全部' ? '累计绩点' : filterSemester + ' 绩点'}}</view>
+      <view class="gpa-method-trigger" bindtap="showGPAMethodModal">
+        <text>算法选择</text>
+        <text class="method-divider">|</text>
+        <text class="method-name">{{currentGPAMethod}}</text>
+      </view>
+    </view>
+    <view class="result-number">{{gpa}}</view>
+    <view class="result-label">总学分: {{totalCredits}} | 已获学分: {{earnedCredits}}</view>
+    <view class="grade-level" style="color: {{gradeColor}}">{{gradeLevel}}</view>
+  </view>
+
+  <!-- GPA算法选择弹窗 -->
+  <view class="modal" wx:if="{{showGPAMethods}}">
+    <view class="modal-mask" bindtap="hideGPAMethodModal"></view>
+    <view class="modal-content method-modal">
+      <view class="modal-title">选择GPA计算方式</view>
+      <view
+        class="method-item {{currentGPAMethod === item.key ? 'active' : ''}}"
+        wx:for="{{gpaMethods}}"
+        wx:key="key"
+        data-method="{{item.key}}"
+        bindtap="selectGPAMethod"
+      >
+        <view class="method-item-left">
+          <text class="method-item-name">{{item.name}}</text>
+          <text class="method-item-desc">{{item.desc}}</text>
+        </view>
+        <text class="method-check" wx:if="{{currentGPAMethod === item.key}}">✓</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学期筛选 -->
+  <scroll-view class="semester-filter" scroll-x="true" enable-flex="true">
+    <view
+      class="semester-tag {{filterSemester === item ? 'active' : ''}}"
+      wx:for="{{availableSemesters}}"
+      wx:key="*this"
+      data-semester="{{item}}"
+      bindtap="onSemesterFilterChange"
+    >{{item}}</view>
+  </scroll-view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions">
+    <button class="action-btn action-btn-small" bindtap="addCourse">
+      <text class="action-icon-sm">+</text>
+      <text>添加</text>
+    </button>
+    <button class="action-btn action-btn-primary" bindtap="importCourses">
+      <text class="action-icon-white">↓</text>
+      <text>教务系统导入成绩</text>
+    </button>
+    <button class="action-btn action-btn-small" bindtap="clearAll">
+      <text class="action-icon-sm">×</text>
+      <text>清空</text>
+    </button>
+  </view>
+
+  <!-- 已排除课程（放在课程列表上方） -->
+  <view class="card">
+    <view class="section-title" bindtap="toggleExcluded">
+      <text>已排除课程（{{excludedCourses.length}}门）</text>
+      <text class="toggle-arrow">{{showExcluded ? '▼' : '▶'}}</text>
+    </view>
+    <view wx:if="{{showExcluded}}">
+      <view wx:if="{{excludedCourses.length === 0}}" class="empty-state">
+        <view class="empty-hint">暂无已排除课程</view>
+      </view>
+      <view wx:else>
+        <view class="excluded-header">
+          <text class="excluded-hint">共 {{excludedCourses.length}} 门课程，点击「加入」可计入绩点</text>
+          <text class="excluded-include-all" bindtap="includeAllExcluded">全部加入</text>
+        </view>
+        <view class="course-item excluded-item" wx:for="{{excludedCourses}}" wx:key="id">
+          <view class="course-info">
+            <view class="course-name">{{item.name}}</view>
+            <view class="course-detail">
+              <text>学分: {{item.credits}}</text>
+              <text class="course-score">成绩: {{item.score || item.grade}}</text>
+            </view>
+          </view>
+          <view class="course-actions">
+            <view class="include-btn" bindtap="includeExcludedCourse" data-index="{{index}}">加入</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程列表 -->
+  <view class="card">
+    <view class="section-title" bindtap="toggleCourseList">
+      <text>课程列表（{{courses.length}}门）</text>
+      <text class="toggle-arrow">{{showCourseList ? '▼' : '▶'}}</text>
+    </view>
+    <view wx:if="{{showCourseList}}">
+      <view wx:if="{{courses.length === 0}}" class="empty-state">
+        <view class="empty-icon">📚</view>
+        <view>暂无课程数据</view>
+        <view class="empty-hint">点击"添加课程"开始计算绩点</view>
+      </view>
+      <view wx:else>
+        <view class="course-item" wx:for="{{courses}}" wx:key="id">
+          <view class="course-info">
+            <view class="course-name">{{item.name}}</view>
+            <view class="course-detail">
+              <text>学分: {{item.credits}}</text>
+              <text class="course-score">成绩: {{item.score || item.grade}}</text>
+            </view>
+          </view>
+          <view class="course-gpa" style="color: {{item.gpaColor}}">{{item.gpa}}</view>
+          <view class="course-actions">
+            <view class="action-icon-small" bindtap="editCourse" data-id="{{item.id}}">✏️</view>
+            <view class="action-icon-small exclude-btn" bindtap="excludeCourse" data-id="{{item.id}}">排除</view>
+            <view class="action-icon-small" bindtap="deleteCourse" data-id="{{item.id}}">🗑️</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 赞赏码弹窗 -->
+  <view class="modal" wx:if="{{showRewardModal}}">
+    <view class="modal-mask" bindtap="hideRewardModal"></view>
+    <view class="modal-content reward-modal">
+      <view class="reward-tip-text">运营有成本\n您的赞赏是维护的动力\n一元两元也是情</view>
+      <view class="reward-modal-img-wrapper" bindtap="previewRewardImage">
+        <image class="reward-modal-img" src="/images/reward.png" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
+      </view>
+      <view class="reward-modal-hint">长按转发到聊天或保存到本地扫一扫</view>
+      <view class="modal-footer" style="margin-top: 30rpx;">
+        <button class="btn-primary" bindtap="hideRewardModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加课程弹窗 -->
+  <view class="modal" wx:if="{{showModal}}">
+    <view class="modal-mask" bindtap="hideModal"></view>
+    <view class="modal-content">
+      <view class="modal-title">{{isEdit ? '编辑课程' : '添加课程'}}</view>
+      <view class="input-group">
+        <text class="input-label">课程名称</text>
+        <input class="input-field" value="{{currentCourse.name}}" bindinput="onInputChange" data-field="name" placeholder="请输入课程名称"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">学分</text>
+        <input class="input-field" type="digit" value="{{currentCourse.credits}}" bindinput="onInputChange" data-field="credits" placeholder="请输入学分"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">成绩类型</text>
+        <picker bindchange="onTypeChange" value="{{scoreTypeIndex}}" range="{{scoreTypes}}">
+          <view class="input-field picker">{{scoreTypes[scoreTypeIndex]}}</view>
+        </picker>
+      </view>
+      <view class="input-group" wx:if="{{scoreTypeIndex === 0}}">
+        <text class="input-label">百分制成绩</text>
+        <input class="input-field" type="number" value="{{currentCourse.score}}" bindinput="onInputChange" data-field="score" placeholder="0-100"/>
+      </view>
+      <view class="input-group" wx:if="{{scoreTypeIndex === 1}}">
+        <text class="input-label">等级成绩</text>
+        <picker bindchange="onGradeChange" value="{{gradeIndex}}" range="{{grades}}">
+          <view class="input-field picker">{{grades[gradeIndex]}}</view>
+        </picker>
+      </view>
+      <view class="input-group">
+        <text class="input-label">学期</text>
+        <picker bindchange="onSemesterChange" value="{{semesterIndex}}" range="{{semesters}}">
+          <view class="input-field picker">{{semesters[semesterIndex]}}</view>
+        </picker>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="hideModal">取消</button>
+        <button class="btn-primary" bindtap="saveCourse">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

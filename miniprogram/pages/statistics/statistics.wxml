@@ -1,0 +1,71 @@
+<!--pages/statistics/statistics.wxml-->
+<view class="container">
+  <!-- 总体统计 -->
+  <view class="stats-overview">
+    <view class="stats-card">
+      <view class="stats-number">{{stats.totalCourses}}</view>
+      <view class="stats-label">总课程数</view>
+    </view>
+    <view class="stats-card">
+      <view class="stats-number">{{stats.totalCredits}}</view>
+      <view class="stats-label">总学分</view>
+    </view>
+    <view class="stats-card">
+      <view class="stats-number">{{stats.averageGPA}}</view>
+      <view class="stats-label">平均绩点</view>
+    </view>
+  </view>
+
+  <!-- 绩点范围 -->
+  <view class="card">
+    <view class="section-title">绩点范围</view>
+    <view class="range-info">
+      <view class="range-item">
+        <view class="range-label">最高绩点</view>
+        <view class="range-value high">{{stats.highestGPA}}</view>
+      </view>
+      <view class="range-item">
+        <view class="range-label">最低绩点</view>
+        <view class="range-value low">{{stats.lowestGPA}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 成绩分布 -->
+  <view class="card">
+    <view class="section-title">成绩分布</view>
+    <view class="distribution-chart">
+      <view class="chart-item" wx:for="{{distributionData}}" wx:key="name">
+        <view class="chart-bar-bg">
+          <view class="chart-bar" style="width: {{item.percentage}}%; background: {{item.color}}"></view>
+        </view>
+        <view class="chart-info">
+          <text class="chart-name">{{item.name}}</text>
+          <text class="chart-count">{{item.count}}门</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学期趋势 -->
+  <view class="card" wx:if="{{semesterTrend.length > 0}}">
+    <view class="section-title">学期趋势</view>
+    <view class="trend-chart">
+      <view class="trend-item" wx:for="{{semesterTrend}}" wx:key="semester">
+        <view class="trend-semester">{{item.semester}}</view>
+        <view class="trend-bar-bg">
+          <view class="trend-bar" style="width: {{item.gpaPercent}}%"></view>
+        </view>
+        <view class="trend-gpa">{{item.gpa}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{stats.totalCourses === 0}}" class="empty-state card">
+    <view class="empty-icon">📊</view>
+    <view>暂无统计数据</view>
+    <view class="empty-hint">添加课程后即可查看统计分析</view>
+    <button class="btn-primary" bindtap="goToCalc" style="margin-top: 40rpx;">去添加课程</button>
+  </view>
+</view>

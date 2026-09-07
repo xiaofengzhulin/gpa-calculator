@@ -1,0 +1,89 @@
+/* pages/history/history.wxss */
+.hint {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  font-weight: 500;
+}
+
+.snapshot-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 24rpx 0;
+}
+
+.snapshot-item.current {
+  background: #f0f7ff;
+  margin: 0 -20rpx;
+  padding: 24rpx 20rpx;
+  border-radius: 12rpx;
+}
+
+.snapshot-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 24rpx;
+  width: 30rpx;
+}
+
+.snapshot-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: #d0d0d0;
+  flex-shrink: 0;
+}
+
+.snapshot-dot.dot-current {
+  background: #4A90E2;
+  box-shadow: 0 0 0 6rpx rgba(74, 144, 226, 0.2);
+}
+
+.snapshot-line {
+  width: 4rpx;
+  flex: 1;
+  background: #e0e0e0;
+  margin-top: 8rpx;
+  min-height: 30rpx;
+}
+
+.snapshot-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.snapshot-desc {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.snapshot-badge {
+  font-size: 20rpx;
+  color: #4A90E2;
+  background: #e8f0fe;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+}
+
+.snapshot-meta {
+  display: flex;
+  gap: 20rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.snapshot-count {
+  color: #666;
+}
+
+.snapshot-arrow {
+  font-size: 36rpx;
+  color: #ccc;
+  margin-left: 16rpx;
+  line-height: 1;
+}

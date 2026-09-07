@@ -1,0 +1,384 @@
+/* pages/index/index.wxss */
+.result-box {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  text-align: center;
+  padding: 40rpx 30rpx;
+  position: relative;
+}
+
+.result-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.result-label {
+  font-size: 26rpx;
+  color: #ffffff;
+  margin: 10rpx 0;
+}
+
+.result-number {
+  font-size: 96rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 20rpx 0;
+}
+
+.grade-level {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-top: 20rpx;
+  padding: 10rpx 30rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 30rpx;
+  display: inline-block;
+}
+
+/* GPA算法选择弹窗 */
+.gpa-method-trigger {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  color: #fff;
+}
+
+.method-divider {
+  margin: 0 8rpx;
+  opacity: 0.6;
+}
+
+.method-name {
+  font-weight: 500;
+}
+
+.method-modal {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.method-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.method-item:last-child {
+  border-bottom: none;
+}
+
+.method-item.active {
+  background: #f0f7ff;
+}
+
+.method-item-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.method-item-name {
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+
+.method-item-desc {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.method-check {
+  font-size: 36rpx;
+  color: #4A90E2;
+  font-weight: bold;
+}
+
+/* 学期筛选 */
+.semester-filter {
+  white-space: nowrap;
+  padding: 20rpx 0;
+  margin-bottom: 10rpx;
+}
+
+.semester-tag {
+  display: inline-block;
+  padding: 12rpx 28rpx;
+  font-size: 24rpx;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 30rpx;
+  margin-right: 16rpx;
+}
+
+.semester-tag.active {
+  background: #4A90E2;
+  color: #ffffff;
+}
+
+/* 快捷操作 */
+.quick-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  margin: 0 10rpx;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 20rpx 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 24rpx;
+  color: #666;
+  border: none;
+  line-height: 1.5;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.action-btn-small {
+  flex: 0.6;
+  padding: 16rpx 6rpx;
+}
+
+.action-btn-primary {
+  flex: 1.8;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 600;
+  padding: 24rpx 10rpx;
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.4);
+  border: none;
+}
+
+.action-btn:first-child {
+  margin-left: 0;
+}
+
+.action-btn:last-child {
+  margin-right: 0;
+}
+
+.action-icon {
+  font-size: 48rpx;
+  color: #4A90E2;
+  margin-bottom: 10rpx;
+}
+
+.action-icon-white {
+  font-size: 48rpx;
+  color: #ffffff;
+  margin-bottom: 10rpx;
+}
+
+.action-icon-sm {
+  font-size: 36rpx;
+  color: #4A90E2;
+  margin-bottom: 6rpx;
+}
+
+/* 课程列表 */
+.course-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.course-item:last-child {
+  border-bottom: none;
+}
+
+.course-info {
+  flex: 1;
+}
+
+.course-name {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.course-detail {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.course-score {
+  margin-left: 20rpx;
+}
+
+.course-gpa {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-right: 20rpx;
+}
+
+.course-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-icon-small {
+  font-size: 32rpx;
+  padding: 10rpx;
+}
+
+.exclude-btn {
+  color: #ff9800;
+  font-size: 22rpx;
+}
+
+/* 弹窗样式 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  width: 85%;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  z-index: 1001;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40rpx;
+}
+
+.modal-footer button {
+  width: 45%;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: #bbb;
+  margin-top: 10rpx;
+}
+
+/* 可折叠区域 */
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-arrow {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: normal;
+}
+
+/* 已排除课程 */
+.excluded-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.excluded-hint {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.excluded-include-all {
+  font-size: 24rpx;
+  color: #4A90E2;
+}
+
+.excluded-item {
+  opacity: 0.7;
+}
+
+.excluded-item .course-name {
+  color: #999;
+}
+
+.include-btn {
+  font-size: 24rpx;
+  color: #4A90E2;
+  background: #e8f0fe;
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+}
+
+/* 赞赏码弹窗 */
+.reward-modal {
+  text-align: center;
+}
+
+.reward-tip-text {
+  font-size: 30rpx;
+  color: #4A90E2;
+  font-weight: bold;
+  white-space: pre-line;
+  line-height: 1.6;
+  margin-bottom: 30rpx;
+}
+
+.reward-modal-img-wrapper {
+  display: inline-block;
+}
+
+.reward-modal-img {
+  width: 440rpx;
+  height: 440rpx;
+  border-radius: 12rpx;
+}
+
+.reward-modal-hint {
+  font-size: 24rpx;
+  color: #4A90E2;
+  font-weight: bold;
+  margin-top: 16rpx;
+}
