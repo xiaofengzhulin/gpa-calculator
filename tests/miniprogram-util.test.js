@@ -14,6 +14,10 @@ const modals = []
 const actionSheets = []
 // 测试里按需替换：模拟用户点选/取消 ActionSheet
 let actionSheetHandler = null
+// 设备信息桩：用于验证「密文绑定本机」
+let deviceInfo = { brand: 'Test', model: 'UnitTest', system: 'test-1', platform: 'devtools' }
+// autoImport 结尾用 setTimeout 切到首页，测试里立即执行，避免挂起进程
+global.setTimeout = (fn) => { if (typeof fn === 'function') fn(); return 0 }
 
 const clone = (value) => (value === undefined ? '' : JSON.parse(JSON.stringify(value)))
 
@@ -48,6 +52,12 @@ global.wx = {
       options.fail({ errMsg: 'showActionSheet:fail cancel' })
     }
   },
+  getDeviceInfo() {
+    return deviceInfo
+  },
+  getAccountInfoSync() {
+    return { miniProgram: { appId: 'wxe071ce7f92759377' } }
+  },
   navigateTo() {},
   switchTab() {},
   previewImage() {},
@@ -59,6 +69,8 @@ global.Page = (config) => { pageConfig = config }
 global.App = () => {}
 
 const util = require('../miniprogram/utils/util.js')
+const secureStore = require('../miniprogram/utils/secure-store.js')
+const api = require('../miniprogram/utils/api.js')
 require('../miniprogram/pages/login/login.js')
 const loginPageConfig = pageConfig
 
@@ -356,6 +368,54 @@ check('无课程时绩点为 0.00', emptyPage.data.gpa, '0.00')
   check('下拉定位到该等级', gradePage.data.grades[gradePage.data.gradeIndex], 'P')
   gradePage.saveCourse()
   check('保存后等级未被改成 A+', util.getCourses()[0].grade, 'P')
+
+  // ==================== 12. 密码加密存储集成 ====================
+  group('12. 密码加密存储与登录页集成')
+  secureStore._resetKeyCache()
+  resetStore()
+
+  // 旧版本明文密码：登录页 onLoad 时自动迁移成密文
+  storage.savedUsername = '202312345678'
+  storage.savedPassword = 'old-plain-pass'
+  const migratePage = makePage(loginPageConfig)
+  migratePage.onLoad()
+  check('旧明文被迁移为密文前缀', String(storage.savedPassword).indexOf('enc:v1:'), 0)
+  check('登录页能解出原密码', migratePage.data.password, 'old-plain-pass')
+  check('勾选状态跟随实际存储', migratePage.data.savePassword, true)
+
+  // 勾选保存 → 落盘是密文；不勾选 → 不落盘
+  resetStore()
+  api.checkHealth = () => Promise.resolve(true)
+  api.fetchGrades = () => Promise.resolve({
+    success: true,
+    courses: [{ name: '加密课', credits: '2', score: '90', semester: '2024-2025-1' }]
+  })
+
+  const savePage = makePage(loginPageConfig)
+  savePage.setData({ username: '202312345678', password: 'my-secret', savePassword: true })
+  await savePage.autoImport()
+  check('导入结果已回显', savePage.data.parseResult.show, true)
+  check('保存下来的是密文', String(storage.savedPassword).indexOf('enc:v1:'), 0)
+  check('缓存里没有明文密码', String(storage.savedPassword).includes('my-secret'), false)
+  check('可解密回原密码', secureStore.getSecret('savedPassword'), 'my-secret')
+
+  resetStore()
+  const noSavePage = makePage(loginPageConfig)
+  noSavePage.setData({ username: '202312345678', password: 'my-secret', savePassword: false })
+  await noSavePage.autoImport()
+  check('不勾选时不写入密码', 'savedPassword' in storage, false)
+
+  // 换设备：密文解不开 → 安全降级为「未保存」，不报错
+  resetStore()
+  storage.savedPassword = secureStore.encrypt('device-bound-secret')
+  deviceInfo = { brand: 'Other', model: 'OtherPhone', system: 'other-1', platform: 'other' }
+  secureStore._resetKeyCache()
+  const otherDevicePage = makePage(loginPageConfig)
+  otherDevicePage.onLoad()
+  check('换设备后读不出密码', otherDevicePage.data.password, '')
+  check('换设备后取消勾选', otherDevicePage.data.savePassword, false)
+  deviceInfo = { brand: 'Test', model: 'UnitTest', system: 'test-1', platform: 'devtools' }
+  secureStore._resetKeyCache()
 
   // ==================== 汇总 ====================
   console.log(`\n${'='.repeat(46)}`)

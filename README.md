@@ -2,7 +2,7 @@
 
 一个微信小程序，用于管理大学课程成绩并计算绩点，支持通过本地代理服务器从教务系统自动抓取成绩。
 
-> **版本**: v1.2.1
+> **版本**: v1.2.2
 >
 > 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 >
@@ -100,6 +100,7 @@ node tests/web-render.test.js    # 页面渲染与按钮交互（内置极简 DO
 node tests/web-static-check.js   # 事件绑定、资源引用、外链依赖、备案信息
 node tests/miniprogram-util.test.js    # 小程序核心逻辑（注入 wx 桩，跑真实 util.js）
 node tests/miniprogram-static-check.js # 小程序 WXML 绑定 / wx:key / 版本号一致性
+node tests/secure-store.test.js        # 密码加密存储（哈希标准向量 / 篡改检测 / 换设备）
 ```
 
 > 网页版与小程序共用同一套算法口径：`deploy/site/gpa-core.js` 由 `miniprogram/utils/util.js` 移植，改动时请两边同步（`tests/gpa-core.test.js` 锁定了关键分档数值）。
@@ -121,7 +122,7 @@ node tests/miniprogram-static-check.js # 小程序 WXML 绑定 / wx:key / 版本
 ## ⚠️ 注意事项
 
 - **域名校验**：关闭域名校验仅对开发版/体验版有效，正式发布需配置 HTTPS 合法域名
-- **数据安全**：账号密码保存在手机本地缓存；本地开发时传输未加密，请勿在公网开放服务器
+- **数据安全**：勾选「记住密码」时密码以加密形式保存在本机缓存（`utils/secure-store.js`：SHA-256 做 PRF 的 CTR 流密码 + HMAC-SHA256 完整性校验），缓存里没有明文；密文与本机设备绑定，拷贝到其他设备无法解密；本地开发时传输未加密，请勿在公网开放服务器
 - **登录保护**：`/api/login` 单 IP 20 次/分钟；同一学号连续失败 5 次锁定 1 分钟，再失败 5 次锁定 5 分钟，10 分钟内无新失败或登录成功即回到初始状态
 - **教务系统稳定性**：教务系统可能调整页面结构，导致抓取失败，届时需同步更新 `server/server.js` 的解析逻辑
 
@@ -138,13 +139,13 @@ A: 不同算法结果不同，可在首页顶部点击算法名称切换 GPA 算
 
 ## 🧾 版本管理
 
-- **版本号**：语义化版本 `主.次.修订`，如 `1.2.1`。修订号只修 bug、次版本号加功能、主版本号做不兼容改动。
+- **版本号**：语义化版本 `主.次.修订`，如 `1.2.2`。修订号只修 bug、次版本号加功能、主版本号做不兼容改动。
 - **三处必须一致**：`miniprogram/pages/about/about.js` 的 `version`、本 README 顶部版本、`CHANGELOG.md` 最新标题（`tests/miniprogram-static-check.js` 会校验，不一致直接测试失败）。
 - **发布流程**：
   1. 改代码 → 跑全部自测（`node tests/xxx.js`，全绿）
   2. 更新 `about.js` 版本号 + `CHANGELOG.md` + README 版本号
-  3. `git commit -m "v1.2.1: ..."` → `git tag v1.2.1`
-  4. 微信开发者工具「上传」时填写同一版本号（如 `1.2.1`），备注写本次改动
+  3. `git commit -m "v1.2.2: ..."` → `git tag v1.2.2`
+  4. 微信开发者工具「上传」时填写同一版本号（如 `1.2.2`），备注写本次改动
 - **历史版本**：`git tag -l` 查看，`git show v1.2.0` 查看某版本改了什么。
 
 ## 📜 License

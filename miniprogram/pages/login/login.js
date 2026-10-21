@@ -1,6 +1,7 @@
 // pages/login/login.js
 const util = require('../../utils/util.js')
 const api = require('../../utils/api.js')
+const secureStore = require('../../utils/secure-store.js')
 
 // 导入前的数据合并策略
 const IMPORT_MODE_REPLACE = 'replace'  // 覆盖：清空本地课程后导入
@@ -32,10 +33,17 @@ Page({
   },
 
   onLoad() {
-    // 恢复保存的账号（密码仅在用户勾选「记住密码」时保存）
+    // 兼容 1.2.1 及更早版本：把历史明文密码升级成密文后再读
+    secureStore.migrateLegacy('savedPassword')
+
     const savedUsername = wx.getStorageSync('savedUsername') || ''
-    const savedPassword = wx.getStorageSync('savedPassword') || ''
-    this.setData({ username: savedUsername, password: savedPassword })
+    const savedPassword = secureStore.getSecret('savedPassword')
+    this.setData({
+      username: savedUsername,
+      password: savedPassword,
+      // 本地确实存过密码时，勾选状态与实际一致
+      savePassword: !!savedPassword
+    })
   },
 
   onShow() {
@@ -119,13 +127,13 @@ Page({
     }
     if (this.data.importing) return
 
-    // 保存/清除账号密码
+    // 保存/清除账号密码（密码经 secure-store 加密后落盘，存储里没有明文）
     if (savePassword) {
       wx.setStorageSync('savedUsername', username)
-      wx.setStorageSync('savedPassword', password)
+      secureStore.setSecret('savedPassword', password)
     } else {
       wx.removeStorageSync('savedUsername')
-      wx.removeStorageSync('savedPassword')
+      secureStore.removeSecret('savedPassword')
     }
 
     const mode = await this.chooseImportMode()
