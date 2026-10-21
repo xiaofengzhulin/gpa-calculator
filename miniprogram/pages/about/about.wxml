@@ -33,6 +33,15 @@
     <text class="beian-tip">点击备案号可复制</text>
   </view>
 
+  <!-- 隐私说明：收集学号/密码必须有明确告知（微信隐私保护指引的前置条件） -->
+  <view class="card">
+    <view class="section-title">隐私说明</view>
+    <text class="privacy-line">1. 学号与教务系统密码仅用于登录教务系统查询你本人的成绩，不用于其他用途。</text>
+    <text class="privacy-line">2. 只有勾选「记住密码」时，密码才会以明文保存在本机缓存，可在登录页随时取消。</text>
+    <text class="privacy-line">3. 成绩与课程数据仅保存在本机缓存，不会上传；导入服务只做请求转发，不保存密码与成绩。</text>
+    <text class="privacy-line">4. 本小程序不提供注册、发帖、评论、支付功能，不收集、不共享任何第三方信息。</text>
+  </view>
+
   <!-- 版权信息 -->
   <view class="footer">
     <text class="footer-text">Made with ❤️ by 于铠歌</text>

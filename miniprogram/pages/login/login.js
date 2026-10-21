@@ -80,7 +80,7 @@ Page({
   },
 
   /**
-   * 本地已有课程时让用户选择「覆盖导入」还是「合并新增」，
+   * 本地已有课程时让用户选择「覆盖导入」「合并新增」或取消，
    * 避免自动导入把用户手动添加的课程静默清空。
    * @returns {Promise<'replace'|'merge'|null>} null 表示用户取消
    */
@@ -89,15 +89,17 @@ Page({
     if (existingCount === 0) return Promise.resolve(IMPORT_MODE_REPLACE)
 
     return new Promise((resolve) => {
-      wx.showModal({
-        title: '已存在课程数据',
-        content: `本地已有 ${existingCount} 门课程。\n「覆盖」将清空后重新导入；「合并」只追加新课程（保留手动添加的课程）。`,
-        confirmText: '覆盖导入',
-        cancelText: '合并新增',
+      // 用 ActionSheet 而不是 showModal：两个按钮都「继续导入」时用户没有退路
+      wx.showActionSheet({
+        alertText: `本地已有 ${existingCount} 门课程：覆盖=清空后重新导入，合并=保留现有只加新课程`,
+        itemList: ['覆盖导入', '合并新增', '取消'],
         success(res) {
-          resolve(res.confirm ? IMPORT_MODE_REPLACE : (res.cancel ? IMPORT_MODE_MERGE : null))
+          if (res.tapIndex === 0) resolve(IMPORT_MODE_REPLACE)
+          else if (res.tapIndex === 1) resolve(IMPORT_MODE_MERGE)
+          else resolve(null)
         },
         fail() {
+          // 点击遮罩/返回键关闭同样视为取消
           resolve(null)
         }
       })
@@ -150,7 +152,8 @@ Page({
       this.setData({ importStep: 4 })
 
       if (imported.count === 0) {
-        this.showError('没有可导入的课程', `查询到 ${result.courses.length} 门成绩，但都已存在于本地，未做改动。`)
+        // 0 门不代表「本地已全部存在」，也可能是成绩无法识别，这里分开说明
+        this.showError('没有可导入的课程', `查询到 ${result.courses.length} 门成绩：${imported.duplicated} 门本地已存在，${imported.invalid} 门缺少课程名/学分或成绩无法识别，未做任何改动。`)
         return
       }
 
@@ -159,15 +162,19 @@ Page({
           show: true,
           count: imported.count,
           skipped: imported.skipped,
-          items: result.courses.slice(0, 10).map(c => ({
+          // 只展示真正写入的课程，避免把重复/无效行也列出来
+          items: imported.imported.slice(0, 10).map(c => ({
+            uid: c.id,
             name: c.name,
-            scoreText: this._formatScoreText(c.score),
-            credits: c.credits
+            scoreText: c.score !== undefined ? this._formatScoreText(c.score) : String(c.grade || '--'),
+            credits: c.credits,
+            semester: c.semester
           }))
         }
       })
 
-      wx.showToast({ title: `成功导入${imported.count}门课程`, icon: 'success' })
+      // toast 标题超过 7 个汉字会被截断，这里用短文案
+      wx.showToast({ title: `已导入${imported.count}门`, icon: 'success' })
       setTimeout(() => { wx.switchTab({ url: '/pages/index/index' }) }, 2000)
 
     } catch (err) {
@@ -203,20 +210,22 @@ Page({
     const existingCourses = mode === IMPORT_MODE_REPLACE ? [] : util.getCourses()
     const existingKeys = new Set(existingCourses.map(c => this._courseKey(c)))
     let count = 0
-    let skipped = 0
+    let duplicated = 0
+    let invalid = 0
+    const imported = []
 
     for (const item of courses) {
-      if (!item || typeof item !== 'object') { skipped++; continue }
+      if (!item || typeof item !== 'object') { invalid++; continue }
 
       const name = String(item.name || '').trim()
       const credits = util.toCredits(item.credits)
       // 课程名或学分缺失的记录无法参与绩点计算，直接跳过并计数
-      if (!name || credits <= 0) { skipped++; continue }
+      if (!name || credits <= 0) { invalid++; continue }
 
       const semester = util.normalizeSemester(item.semester)
       const key = this._courseKey({ name, semester })
       // 同名课程可能出现在不同学期，去重键必须带上学期
-      if (existingKeys.has(key)) { skipped++; continue }
+      if (existingKeys.has(key)) { duplicated++; continue }
       existingKeys.add(key)
 
       const course = {
@@ -236,12 +245,14 @@ Page({
           : util.scoreToGPA(scoreNum)
       } else {
         const grade = util.normalizeGrade(item.score)
-        if (!grade) { skipped++; continue }
+        // 合格/通过/P/NP 等无法换算绩点的记录不参与计算，但要计入「跳过」反馈
+        if (!grade) { invalid++; continue }
         course.grade = grade
         course.gpa = util.gradeToGPA(grade)
       }
 
       existingCourses.push(course)
+      imported.push(course)
       count++
     }
 
@@ -256,7 +267,7 @@ Page({
       })
     }
 
-    return { count, skipped }
+    return { count, skipped: duplicated + invalid, duplicated, invalid, imported }
   },
 
   _courseKey(course) {
@@ -307,7 +318,7 @@ Page({
       var result = this._importScores(scores, this.data.clearExisting)
 
       if (result.count === 0) {
-        this.showError('没有可导入的课程', '解析到 ' + scores.length + ' 门成绩，但都与本地已有课程重复。如需覆盖，请勾选「清除已导入成绩」后重试。')
+        this.showError('没有可导入的课程', '解析到 ' + scores.length + ' 门成绩：' + result.duplicated + ' 门与本地重复、' + result.invalid + ' 门无效。如需覆盖，请勾选「清除已导入成绩」后重试。')
         return
       }
 
@@ -316,15 +327,20 @@ Page({
           show: true,
           count: result.count,
           skipped: result.skipped,
-          items: scores.slice(0, 10).map(function(item) {
-            return Object.assign({}, item, {
-              scoreText: item.score !== undefined ? String(item.score) : (item.grade || '--')
-            })
+          // 只展示真正写入的课程
+          items: result.imported.slice(0, 10).map(function(item) {
+            return {
+              uid: item.id,
+              name: item.name,
+              scoreText: item.score !== undefined ? String(item.score) : (item.grade || '--'),
+              credits: item.credits,
+              semester: item.semester
+            }
           })
         }
       })
 
-      wx.showToast({ title: '成功导入' + result.count + '门课程', icon: 'success' })
+      wx.showToast({ title: '已导入' + result.count + '门', icon: 'success' })
       setTimeout(function() { wx.switchTab({ url: '/pages/index/index' }) }, 1500)
 
     } catch (err) {
@@ -403,17 +419,19 @@ Page({
     var existingCourses = clearExisting ? [] : util.getCourses()
     var existingKeys = new Set(existingCourses.map(c => this._courseKey(c)))
     var count = 0
-    var skipped = 0
+    var duplicated = 0
+    var invalid = 0
+    var imported = []
 
     scores.forEach((score) => {
       var name = String(score.name || '').trim()
       var credits = util.toCredits(score.credits)
-      if (!name || credits <= 0) { skipped++; return }
+      if (!name || credits <= 0) { invalid++; return }
 
       var semester = util.normalizeSemester(score.semester)
       var key = this._courseKey({ name: name, semester: semester })
       // 去重键带上学期：同名课程在不同学期（如 体育/体育）应分别保留
-      if (existingKeys.has(key)) { skipped++; return }
+      if (existingKeys.has(key)) { duplicated++; return }
       existingKeys.add(key)
 
       var course = {
@@ -431,6 +449,7 @@ Page({
       }
       if (score.type) course.type = score.type
       existingCourses.push(course)
+      imported.push(course)
       count++
     })
 
@@ -444,7 +463,7 @@ Page({
         time: new Date().toISOString()
       })
     }
-    return { count, skipped }
+    return { count, skipped: duplicated + invalid, duplicated, invalid, imported }
   },
 
   // ==================== 通用 ====================

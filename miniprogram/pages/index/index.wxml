@@ -147,7 +147,7 @@
       </view>
       <view class="input-group" wx:if="{{scoreTypeIndex === 0}}">
         <text class="input-label">百分制成绩</text>
-        <input class="input-field" type="number" value="{{currentCourse.score}}" bindinput="onInputChange" data-field="score" placeholder="0-100"/>
+        <input class="input-field" type="digit" value="{{currentCourse.score}}" bindinput="onInputChange" data-field="score" placeholder="0-100"/>
       </view>
       <view class="input-group" wx:if="{{scoreTypeIndex === 1}}">
         <text class="input-label">等级成绩</text>

@@ -17,7 +17,7 @@
   </view>
 
   <!-- 绩点范围 -->
-  <view class="card">
+  <view class="card" wx:if="{{stats.totalCourses > 0}}">
     <view class="section-title">绩点范围</view>
     <view class="range-info">
       <view class="range-item">
@@ -32,7 +32,7 @@
   </view>
 
   <!-- 成绩分布 -->
-  <view class="card">
+  <view class="card" wx:if="{{stats.totalCourses > 0}}">
     <view class="section-title">成绩分布</view>
     <view class="distribution-chart">
       <view class="chart-item" wx:for="{{distributionData}}" wx:key="name">

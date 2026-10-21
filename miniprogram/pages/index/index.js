@@ -4,6 +4,9 @@ const util = require('../../utils/util.js')
 // 学期下拉的固定选项（手动添加课程时常用）
 const BASE_SEMESTERS = ['大一上', '大一下', '大二上', '大二下', '大三上', '大三下', '大四上', '大四下']
 
+// 等级下拉的默认选项（编辑旧数据时可能临时追加「优」等自定义等级）
+const DEFAULT_GRADES = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F']
+
 // 课程成绩展示文案：0 分是合法成绩，不能用 `score || grade` 判断（0 会被当成 false）
 const formatScore = (course) => {
   const hasScore = course.score !== undefined && course.score !== null && course.score !== ''
@@ -40,7 +43,7 @@ Page({
     },
     scoreTypes: ['百分制', '等级制'],
     scoreTypeIndex: 0,
-    grades: ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'],
+    grades: DEFAULT_GRADES,
     gradeIndex: 0,
     semesters: BASE_SEMESTERS,
     semesterIndex: 0
@@ -148,6 +151,7 @@ Page({
       editIndex: -1,
       currentCourse: { name: '', credits: '', score: '', grade: '', semester: BASE_SEMESTERS[0] },
       scoreTypeIndex: 0,
+      grades: DEFAULT_GRADES,
       gradeIndex: 0,
       semesterIndex: 0
     })
@@ -162,9 +166,18 @@ Page({
     const isGradeType = !hasScore && !!course.grade
     const semesterOptions = this.data.semesters
     const semesterIndex = Math.max(0, semesterOptions.indexOf(course.semester))
-    const gradeIndex = this.data.grades.indexOf(course.grade)
+
+    // 旧数据里可能存在「优」「P」等不在下拉表里的等级，
+    // 直接回退到 0（A+）会在保存时把等级偷偷改掉，这里动态补进选项。
+    let gradeOptions = this.data.grades
+    let gradeIndex = gradeOptions.indexOf(course.grade)
+    if (course.grade && gradeIndex === -1) {
+      gradeOptions = gradeOptions.concat([course.grade])
+      gradeIndex = gradeOptions.length - 1
+    }
 
     this.setData({
+      grades: gradeOptions,
       showModal: true,
       isEdit: true,
       editIndex: course.id,

@@ -70,6 +70,19 @@
   text-align: right;
 }
 
+/* 隐私说明 */
+.privacy-line {
+  display: block;
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.8;
+  margin-bottom: 8rpx;
+}
+
+.privacy-line:last-child {
+  margin-bottom: 0;
+}
+
 /* 底部版权 */
 .footer {
   text-align: center;

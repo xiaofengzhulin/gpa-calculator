@@ -81,7 +81,6 @@
   margin-bottom: 8rpx;
   display: flex;
   align-items: center;
-  gap: 12rpx;
 }
 
 .snapshot-badge {
@@ -90,11 +89,12 @@
   background: #e8f0fe;
   padding: 4rpx 12rpx;
   border-radius: 6rpx;
+  /* 旧版本 iOS/Android WebView 不支持 flex gap，用 margin 兜底 */
+  margin-left: 12rpx;
 }
 
 .snapshot-meta {
   display: flex;
-  gap: 20rpx;
   font-size: 24rpx;
   color: #999;
 }
@@ -105,6 +105,7 @@
 
 .snapshot-time {
   color: #999;
+  margin-left: 20rpx;
 }
 
 .snapshot-arrow {

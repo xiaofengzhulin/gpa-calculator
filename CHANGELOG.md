@@ -54,9 +54,24 @@
 - 删除 0 字节且无人引用的 `miniprogram/fonts/SmileySans.woff2`。
 - `.gitignore` 修正：`*.py` 会误伤 `deploy/deploy_server.py`（一键部署必需），已加白名单；根目录一次性分析脚本 `_*.js`、`_session.jsonl`、`_dsh_src/` 不再出现在 `git status` 里。
 
-### ✅ 测试（新增 95 项）
+### 🩹 补充修复（第二轮独立审查后追加）
 
-- `node tests/miniprogram-util.test.js`：55 项，给 Node 注入极简 `wx` 桩，直接跑真实的 `miniprogram/utils/util.js`、登录页导入/表格解析逻辑、首页添加与编辑校验。
+- 导入结果只回显**真正写入**的课程（原来列的是服务端原始行，重复/无效行也会出现），并新增「另有 N 条重复或无法识别的记录已跳过」提示。
+- 导入 0 门时的文案区分「本地已存在」与「无法识别」两种情况，不再统一说成「都已存在于本地」。
+- 「覆盖导入 / 合并新增」改用手势菜单，并新增「取消导入」；点遮罩关闭也视为取消（原来两个按钮都会继续导入，用户没有退路）。
+- 导入成功的 toast 文案缩短到 7 个汉字以内（微信超长会被截断）。
+- 导入结果列表的 `wx:key` 改为唯一 `uid`：同名课程分属不同学期时不再撞 key。
+- 错误弹窗恢复换行显示（`white-space: pre-line`），锁定倒计时等两段文案不再挤成一行。
+- 百分制成绩输入框 `type="number"` → `digit`，可以录入 89.5 这类小数成绩。
+- 编辑旧数据里的非常规等级（如「优」「P」）时，会自动补进下拉选项，不再被悄悄改写成 A+。
+- 统计页无数据时隐藏「绩点范围」「成绩分布」卡片，避免和底部空状态卡片重复。
+- 历史页去掉 flex `gap`，改用 margin，兼容较旧 iOS/Android WebView。
+- 「关于」页新增**隐私说明**（学号密码用途、明文存储条件、数据不上传、无第三方共享），作为微信《隐私保护指引》的页面内告知。
+- 删除本地残留的 `miniprogram/project.private.config.json`（libVersion/projectname 与根配置冲突）与 `miniprogram/fonts/` 占位文件。
+
+### ✅ 测试（新增 112 项）
+
+- `node tests/miniprogram-util.test.js`：72 项，给 Node 注入极简 `wx` 桩，直接跑真实的 `miniprogram/utils/util.js`、登录页导入/表格解析/导入模式选择、首页添加编辑与非常规等级处理。
 - `node tests/miniprogram-static-check.js`：40 项，静态检查 WXML 事件绑定/`data` 字段/`wx:for` 的 `wx:key`/字面量 `\n`/`0 分展示`/`app.json`/版本号一致性。
 
 ### 📦 同期变更（非小程序代码，随本版本一并入库）

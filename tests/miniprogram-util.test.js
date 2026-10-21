@@ -11,6 +11,9 @@
 const storage = {}
 const toasts = []
 const modals = []
+const actionSheets = []
+// 测试里按需替换：模拟用户点选/取消 ActionSheet
+let actionSheetHandler = null
 
 const clone = (value) => (value === undefined ? '' : JSON.parse(JSON.stringify(value)))
 
@@ -36,6 +39,14 @@ global.wx = {
   },
   setClipboardData(options) {
     if (options && typeof options.success === 'function') options.success()
+  },
+  showActionSheet(options) {
+    actionSheets.push(options)
+    if (actionSheetHandler) {
+      actionSheetHandler(options)
+    } else if (typeof options.fail === 'function') {
+      options.fail({ errMsg: 'showActionSheet:fail cancel' })
+    }
   },
   navigateTo() {},
   switchTab() {},
@@ -291,8 +302,64 @@ emptyPage.loadCourses()
 check('无课程时等级为「暂无数据」', emptyPage.data.gradeLevel, '暂无数据')
 check('无课程时绩点为 0.00', emptyPage.data.gpa, '0.00')
 
-// ==================== 汇总 ====================
-console.log(`\n${'='.repeat(46)}`)
-console.log(`通过 ${passed} 项，失败 ${failed} 项`)
-console.log('='.repeat(46))
-process.exit(failed === 0 ? 0 : 1)
+// ==================== 11. 导入模式选择 / 结果回显（1.2.1 补充） ====================
+;(async () => {
+  group('11. 导入模式选择与结果回显')
+
+  resetStore()
+  check('无本地课程时直接走覆盖', await loginPage.chooseImportMode(), 'replace')
+
+  util.saveCourses([{ id: 'k1', name: '已有课', credits: 2, score: 80, semester: '大一上' }], '已有数据')
+  const options = { itemList: [] }
+  actionSheetHandler = (opts) => {
+    Object.assign(options, opts)
+    opts.success && opts.success({ tapIndex: 0 })
+  }
+  check('有本地课程时弹出选择', await loginPage.chooseImportMode(), 'replace')
+  check('选择项包含「取消」', options.itemList.length, 3)
+  check('选择项顺序正确', options.itemList[0], '覆盖导入')
+  check('提示文案带课程数', /已有 1 门课程/.test(options.alertText), true)
+
+  actionSheetHandler = (opts) => opts.success && opts.success({ tapIndex: 1 })
+  check('选择合并', await loginPage.chooseImportMode(), 'merge')
+  actionSheetHandler = (opts) => opts.success && opts.success({ tapIndex: 2 })
+  check('选择取消返回 null', await loginPage.chooseImportMode(), null)
+  actionSheetHandler = null
+  check('点遮罩关闭视为取消', await loginPage.chooseImportMode(), null)
+
+  // 导入结果只回显真正写入的课程
+  resetStore()
+  const r = loginPage._importCourses([
+    { name: '课程A', credits: '2', score: '90', semester: 's1' },
+    { name: '课程A', credits: '2', score: '80', semester: 's1' },
+    { name: '', credits: '2', score: '90', semester: 's1' }
+  ], 'replace')
+  check('写入 1 门', r.count, 1)
+  check('重复 1 条', r.duplicated, 1)
+  check('无效 1 条', r.invalid, 1)
+  check('跳过量=重复+无效', r.skipped, 2)
+  check('imported 只含写入项', r.imported.length, 1)
+  check('imported 带唯一 id', r.imported[0].id, util.getCourses()[0].id)
+
+  // 编辑旧数据里的非常规等级（如 P）不能被悄悄改回 A+
+  resetStore()
+  util.saveCourses([{ id: 'g1', name: '体育课', credits: 1, grade: 'P', semester: '大一上' }], '导入')
+  const gradePage = makePage(indexPageConfig)
+  gradePage.setData({
+    courses: [{
+      id: 'g1', name: '体育课', credits: 1, grade: 'P', semester: '大一上',
+      gpa: '0.00', gpaColor: '#ff4d4f', scoreText: 'P'
+    }]
+  })
+  gradePage.editCourse({ currentTarget: { dataset: { id: 'g1' } } })
+  check('非常规等级被补进下拉', gradePage.data.grades.includes('P'), true)
+  check('下拉定位到该等级', gradePage.data.grades[gradePage.data.gradeIndex], 'P')
+  gradePage.saveCourse()
+  check('保存后等级未被改成 A+', util.getCourses()[0].grade, 'P')
+
+  // ==================== 汇总 ====================
+  console.log(`\n${'='.repeat(46)}`)
+  console.log(`通过 ${passed} 项，失败 ${failed} 项`)
+  console.log('='.repeat(46))
+  process.exit(failed === 0 ? 0 : 1)
+})()

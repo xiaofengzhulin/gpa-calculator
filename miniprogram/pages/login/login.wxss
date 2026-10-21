@@ -226,6 +226,12 @@
   overflow-y: auto;
 }
 
+.result-skipped {
+  font-size: 24rpx;
+  color: #faad14;
+  margin-bottom: 16rpx;
+}
+
 .result-item {
   display: flex;
   justify-content: space-between;
@@ -294,6 +300,8 @@
   font-size: 28rpx;
   color: #ff4d4f;
   line-height: 1.6;
+  /* 错误信息里用 \n\n 分段，必须保留换行，否则两段会挤成一行 */
+  white-space: pre-line;
 }
 
 /* 密码可见切换 */

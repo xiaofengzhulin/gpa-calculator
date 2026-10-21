@@ -128,10 +128,11 @@
   <view class="card" wx:if="{{parseResult.show}}">
     <view class="section-title">导入结果</view>
     <view class="result-info">成功导入 {{parseResult.count}} 门课程</view>
+    <view class="result-skipped" wx:if="{{parseResult.skipped > 0}}">另有 {{parseResult.skipped}} 条重复或无法识别的记录已跳过</view>
     <view class="result-list">
-      <view class="result-item" wx:for="{{parseResult.items}}" wx:key="name">
+      <view class="result-item" wx:for="{{parseResult.items}}" wx:key="uid">
         <view class="result-name">{{item.name}}</view>
-        <view class="result-detail">{{item.scoreText}} | {{item.credits}}学分</view>
+        <view class="result-detail">{{item.scoreText}} | {{item.credits}}学分 | {{item.semester}}</view>
       </view>
     </view>
   </view>
