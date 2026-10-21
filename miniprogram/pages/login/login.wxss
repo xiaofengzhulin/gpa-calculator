@@ -213,6 +213,13 @@
   padding-left: 44rpx;
 }
 
+/* 「记住密码」+「忘记密码」这一行：纵向排列，避免挤在一行 */
+.pwd-options {
+  flex-direction: column;
+  align-items: flex-start;
+  border-bottom: none;
+}
+
 /* 解析结果 */
 .result-info {
   font-size: 28rpx;
