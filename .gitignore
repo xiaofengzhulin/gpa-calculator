@@ -10,6 +10,13 @@ fetch_scores.py
 # ---- 调试/抓取脚本（含历史尝试，不入库）----
 *.py
 *.bat
+# 但部署脚本是正式交付物，必须入库（否则一键部署缺少服务器端安装器）
+!deploy/deploy_server.py
+
+# ---- 一次性分析脚本 / 抓包文件（根目录 _ 开头）----
+/_*.js
+/_session.jsonl
+/_dsh_src/
 
 # ---- 调试输出与测试文件 ----
 *.txt
@@ -34,3 +41,7 @@ desktop.ini
 # ---- Node ----
 node_modules/
 *.log
+
+# ---- Python 缓存 ----
+__pycache__/
+*.pyc

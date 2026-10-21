@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 标题与 ICP / 公安备案登记的「网站名称」保持完全一致，便于审核人员核对 -->
+<title>yjt燕理绩点计算通</title>
+<meta name="description" content="yjt燕理绩点计算通：个人学习辅助工具，支持课程成绩管理、7 种 GPA 算法换算、学期筛选与成绩统计分析。数据仅保存在本地浏览器。">
+<meta name="keywords" content="绩点计算,GPA,成绩管理,成绩统计,学习工具">
+<meta name="author" content="于铠歌">
+<meta name="theme-color" content="#4A90E2">
+<meta name="robots" content="index,follow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">🎓</div>
+      <div class="brand-text">
+        <h1>yjt燕理绩点计算通</h1>
+        <p>个人学习辅助工具 · 成绩管理与绩点换算</p>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="主导航">
+      <button class="tab is-active" role="tab" aria-selected="true" data-act="tab" data-tab="calc">计算</button>
+      <button class="tab" role="tab" aria-selected="false" data-act="tab" data-tab="stats">统计</button>
+      <button class="tab" role="tab" aria-selected="false" data-act="tab" data-tab="history">历史</button>
+      <button class="tab" role="tab" aria-selected="false" data-act="tab" data-tab="about">关于</button>
+    </nav>
+  </div>
+</header>
+
+<main id="view" class="view">
+  <noscript>
+    <section class="card">
+      <h2>网站说明</h2>
+      <p><b>yjt燕理绩点计算通</b>是一个个人学习辅助工具，用于管理课程成绩并按多种算法换算绩点。本站为个人非经营性网站，不提供用户注册、发帖、评论等交互服务，课程数据仅保存在浏览器本地，不上传服务器。</p>
+      <p>请启用 JavaScript 以使用计算功能。</p>
+    </section>
+  </noscript>
+</main>
+
+<footer class="app-footer">
+  <p class="foot-line">yjt燕理绩点计算通 · 个人非经营性网站 · 仅供个人学习交流使用</p>
+  <p class="foot-line">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">蒙ICP备2026007686号-2</a>
+    <span class="sep">|</span>
+    <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener noreferrer" id="police-beian">蒙公网安备（备案办理中）</a>
+  </p>
+  <p class="foot-line foot-muted">联系邮箱：2848801752@qq.com</p>
+</footer>
+
+<div id="modal-root"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="gpa-core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
