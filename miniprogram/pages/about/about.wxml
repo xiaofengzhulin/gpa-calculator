@@ -17,6 +17,22 @@
     </view>
   </view>
 
+  <!-- 备案信息：法规要求在小程序显著位置展示 ICP / 公安备案号 -->
+  <view class="card">
+    <view class="section-title">备案信息</view>
+    <view class="contact-list">
+      <view class="contact-item" bindtap="copyBeian" data-text="{{icp}}">
+        <text class="contact-label">工信部备案号</text>
+        <text class="beian-value">{{icp}}</text>
+      </view>
+      <view class="contact-item" bindtap="copyBeian" data-text="{{policeReady ? police : ''}}">
+        <text class="contact-label">公安备案号</text>
+        <text class="beian-value {{policeReady ? '' : 'muted'}}">{{police}}</text>
+      </view>
+    </view>
+    <text class="beian-tip">点击备案号可复制</text>
+  </view>
+
   <!-- 版权信息 -->
   <view class="footer">
     <text class="footer-text">Made with ❤️ by 于铠歌</text>

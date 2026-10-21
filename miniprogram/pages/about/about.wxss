@@ -48,6 +48,28 @@
   color: #4A90E2;
 }
 
+/* 备案信息 */
+.beian-value {
+  flex: 1;
+  text-align: right;
+  margin-left: 20rpx;
+  font-size: 26rpx;
+  color: #4A90E2;
+  word-break: break-all;
+}
+
+.beian-value.muted {
+  color: #999999;
+}
+
+.beian-tip {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #999999;
+  text-align: right;
+}
+
 /* 底部版权 */
 .footer {
   text-align: center;
@@ -56,7 +78,7 @@
 
 .footer-text {
   display: block;
-  font-size: 22rpx;
-  color: #ccc;
+  font-size: 24rpx;
+  color: #000000;
   line-height: 1.8;
 }

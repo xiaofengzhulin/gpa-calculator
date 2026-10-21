@@ -5,10 +5,26 @@
  * 使用前需确保代理服务器已启动（server/server.js）
  */
 
-// 代理服务器地址 - 开发环境使用局域网 IP，部署后改为服务器地址
-// ⚠️ 手机和电脑需在同一局域网（连同一个 WiFi）
-// 可通过 wx.setStorageSync('apiBase', 'http://x.x.x.x:3000') 动态覆盖
-const DEFAULT_API_BASE = 'http://172.29.12.179:3000'
+// 代理服务器地址（正式环境）
+// 走已备案域名的 HTTPS：小程序正式版强制要求 HTTPS + 已备案的合法域名
+const DEFAULT_API_BASE = 'https://xiaofengzhulin.xyz'
+
+// 本地调试备用地址（仅开发者工具勾选「不校验合法域名」时可用）
+const DEV_API_BASE = 'http://182.92.80.164:3000'
+
+/**
+ * 运行时切换接口地址（调试用，写入本地缓存后永久生效）
+ *   切到备用地址：require('../../utils/api.js').setApiBase(DEV_API_BASE)
+ *   恢复正式地址：resetApiBase()
+ * @param {string} base 形如 https://xiaofengzhulin.xyz
+ */
+function setApiBase(base) {
+  wx.setStorageSync('apiBase', base)
+}
+
+function resetApiBase() {
+  wx.removeStorageSync('apiBase')
+}
 
 function getApiBase() {
   return wx.getStorageSync('apiBase') || DEFAULT_API_BASE
@@ -33,7 +49,14 @@ function fetchGrades(username, password) {
           resolve(res.data)
         } else {
           const errMsg = (res.data && res.data.error) || `请求失败 (${res.statusCode})`
-          reject(new Error(errMsg))
+          const err = new Error(errMsg)
+          // 服务端会带出剩余尝试次数 / 解锁倒计时，便于界面提示
+          if (res.data) {
+            if (res.data.remainingAttempts !== undefined) err.remainingAttempts = res.data.remainingAttempts
+            if (res.data.retryAfter !== undefined) err.retryAfter = res.data.retryAfter
+            if (res.data.scope) err.scope = res.data.scope
+          }
+          reject(err)
         }
       },
       fail(err) {
@@ -63,4 +86,4 @@ function checkHealth() {
   })
 }
 
-module.exports = { fetchGrades, checkHealth, getApiBase, DEFAULT_API_BASE }
+module.exports = { fetchGrades, checkHealth, getApiBase, setApiBase, resetApiBase, DEFAULT_API_BASE, DEV_API_BASE }

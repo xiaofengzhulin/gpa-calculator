@@ -18,7 +18,7 @@
     <view class="server-status {{serverOnline ? 'online' : 'offline'}}">
       <view class="status-dot"></view>
       <text>{{serverOnline ? '服务器已连接' : '服务器未连接'}}</text>
-      <text class="status-hint" wx:if="{{!serverOnline}}">请先启动 server/server.js</text>
+      <text class="status-hint" wx:if="{{!serverOnline}}">导入服务暂不可用，可稍后重试或改用「手动粘贴」</text>
     </view>
 
     <view class="card">
@@ -41,6 +41,7 @@
             <text>记住密码</text>
           </label>
         </checkbox-group>
+        <view class="option-hint">{{savePassword ? '密码以明文存于本机缓存，仅用于登录教务系统' : '不保存密码，下次导入需重新输入'}}</view>
         <view class="reset-pwd-hint" bindtap="copyResetLink">
           <text>忘记密码？点击复制官网链接去重置密码</text>
           <text class="reset-pwd-url">http://jw.yit.edu.cn/yjlgxy/</text>
@@ -130,7 +131,7 @@
     <view class="result-list">
       <view class="result-item" wx:for="{{parseResult.items}}" wx:key="name">
         <view class="result-name">{{item.name}}</view>
-        <view class="result-detail">{{item.score || item.grade}} | {{item.credits}}学分</view>
+        <view class="result-detail">{{item.scoreText}} | {{item.credits}}学分</view>
       </view>
     </view>
   </view>

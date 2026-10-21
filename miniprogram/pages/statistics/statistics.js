@@ -1,6 +1,14 @@
 // pages/statistics/statistics.js
 const util = require('../../utils/util.js')
 
+const DISTRIBUTION_COLORS = {
+  '优秀(4.0+)': '#52c41a',
+  '良好(3.0-4.0)': '#4A90E2',
+  '中等(2.0-3.0)': '#faad14',
+  '及格(1.0-2.0)': '#ff7a45',
+  '不及格(<1.0)': '#ff4d4f'
+}
+
 Page({
   data: {
     stats: {
@@ -8,16 +16,12 @@ Page({
       totalCredits: 0,
       averageGPA: '0.00',
       highestGPA: 0,
-      lowestGPA: 4.67,
+      lowestGPA: 0,
       gradeDistribution: {},
       semesterTrend: []
     },
     distributionData: [],
     semesterTrend: []
-  },
-
-  onLoad() {
-    this.loadStatistics()
   },
 
   onShow() {
@@ -28,28 +32,31 @@ Page({
     const courses = util.getCourses()
     const stats = util.calculateStatistics(courses)
 
-    const colors = {
-      '优秀(4.0+)': '#52c41a',
-      '良好(3.0-4.0)': '#4A90E2',
-      '中等(2.0-3.0)': '#faad14',
-      '及格(1.0-2.0)': '#ff7a45',
-      '不及格(<1.0)': '#ff4d4f'
-    }
-
-    const distributionData = Object.keys(stats.gradeDistribution).map(name => ({
-      name,
-      count: stats.gradeDistribution[name],
-      percentage: stats.totalCourses > 0 ? Math.max((stats.gradeDistribution[name] / stats.totalCourses) * 100, 2) : 0,
-      color: colors[name]
-    }))
+    const distributionData = Object.keys(stats.gradeDistribution).map(name => {
+      const count = stats.gradeDistribution[name]
+      // 数量为 0 时不画进度条，避免出现「0 门却有 2% 长条」的错觉
+      const percentage = count > 0 && stats.totalCourses > 0
+        ? Math.max((count / stats.totalCourses) * 100, 2)
+        : 0
+      return {
+        name,
+        count,
+        percentage: Number(percentage.toFixed(1)),
+        color: DISTRIBUTION_COLORS[name]
+      }
+    })
 
     this.setData({
       stats,
       distributionData,
-      semesterTrend: stats.semesterTrend.map(item => ({
-        ...item,
-        gpaPercent: Math.max((Number(item.gpa) / 4.67) * 100, 2)
-      }))
+      semesterTrend: stats.semesterTrend.map(item => {
+        const gpa = Number(item.gpa)
+        const gpaPercent = Number.isFinite(gpa) ? Math.max((gpa / 4.67) * 100, 2) : 0
+        return {
+          ...item,
+          gpaPercent: Number(gpaPercent.toFixed(1))
+        }
+      })
     })
   },
 

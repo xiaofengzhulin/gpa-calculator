@@ -83,11 +83,11 @@
             <view class="course-name">{{item.name}}</view>
             <view class="course-detail">
               <text>学分: {{item.credits}}</text>
-              <text class="course-score">成绩: {{item.score || item.grade}}</text>
+              <text class="course-score">成绩: {{item.scoreText}}</text>
             </view>
           </view>
           <view class="course-actions">
-            <view class="include-btn" bindtap="includeExcludedCourse" data-index="{{index}}">加入</view>
+            <view class="include-btn" bindtap="includeExcludedCourse" data-id="{{item.id}}">加入</view>
           </view>
         </view>
       </view>
@@ -112,7 +112,7 @@
             <view class="course-name">{{item.name}}</view>
             <view class="course-detail">
               <text>学分: {{item.credits}}</text>
-              <text class="course-score">成绩: {{item.score || item.grade}}</text>
+              <text class="course-score">成绩: {{item.scoreText}}</text>
             </view>
           </view>
           <view class="course-gpa" style="color: {{item.gpaColor}}">{{item.gpa}}</view>
@@ -122,21 +122,6 @@
             <view class="action-icon-small" bindtap="deleteCourse" data-id="{{item.id}}">🗑️</view>
           </view>
         </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 赞赏码弹窗 -->
-  <view class="modal" wx:if="{{showRewardModal}}">
-    <view class="modal-mask" bindtap="hideRewardModal"></view>
-    <view class="modal-content reward-modal">
-      <view class="reward-tip-text">运营有成本\n您的赞赏是维护的动力\n一元两元也是情</view>
-      <view class="reward-modal-img-wrapper" bindtap="previewRewardImage">
-        <image class="reward-modal-img" src="/images/reward.png" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
-      </view>
-      <view class="reward-modal-hint">长按转发到聊天或保存到本地扫一扫</view>
-      <view class="modal-footer" style="margin-top: 30rpx;">
-        <button class="btn-primary" bindtap="hideRewardModal">关闭</button>
       </view>
     </view>
   </view>

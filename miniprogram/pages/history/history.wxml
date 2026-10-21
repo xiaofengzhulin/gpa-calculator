@@ -1,7 +1,10 @@
 <!--pages/history/history.wxml-->
 <view class="container">
   <view class="card">
-    <view class="section-title">操作记录（最近15次）</view>
+    <view class="title-row">
+      <view class="section-title">操作记录（最近15次）</view>
+      <view class="clear-btn" wx:if="{{hasRecords}}" bindtap="clearHistory">清空</view>
+    </view>
     <view class="hint">点击记录可恢复到该状态</view>
     <view wx:if="{{snapshots.length === 0}}" class="empty-state">
       <view class="empty-icon">📝</view>
@@ -11,7 +14,7 @@
       <view
         class="snapshot-item {{item.isCurrent ? 'current' : ''}}"
         wx:for="{{snapshots}}"
-        wx:key="index"
+        wx:key="uid"
         bindtap="restoreSnapshot"
         data-index="{{index}}"
       >
@@ -31,6 +34,7 @@
         </view>
         <view class="snapshot-arrow" wx:if="{{!item.isCurrent}}">›</view>
       </view>
+      <view wx:if="{{!hasRecords}}" class="no-record-hint">暂无历史记录，修改课程后会自动生成</view>
     </view>
   </view>
 </view>

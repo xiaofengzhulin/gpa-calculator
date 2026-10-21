@@ -2,6 +2,10 @@
 const util = require('../../utils/util.js')
 const api = require('../../utils/api.js')
 
+// 导入前的数据合并策略
+const IMPORT_MODE_REPLACE = 'replace'  // 覆盖：清空本地课程后导入
+const IMPORT_MODE_MERGE = 'merge'      // 合并：保留本地课程，只追加新课程
+
 Page({
   data: {
     importMode: 'auto',    // 'auto' | 'manual'
@@ -11,14 +15,15 @@ Page({
     username: '',
     password: '',
     showPassword: false,
-    savePassword: true,
+    // 默认不勾选「记住密码」：密码是明文用户凭据，只有用户主动选择才落盘
+    savePassword: false,
     importing: false,
     importStep: 0,
 
     // 手动粘贴
     scoreText: '',
     clearExisting: true,
-    parseResult: { show: false, count: 0, items: [] },
+    parseResult: { show: false, count: 0, items: [], skipped: 0 },
 
     // 通用
     showErrorModal: false,
@@ -27,7 +32,7 @@ Page({
   },
 
   onLoad() {
-    // 恢复保存的账号密码
+    // 恢复保存的账号（密码仅在用户勾选「记住密码」时保存）
     const savedUsername = wx.getStorageSync('savedUsername') || ''
     const savedPassword = wx.getStorageSync('savedPassword') || ''
     this.setData({ username: savedUsername, password: savedPassword })
@@ -58,7 +63,7 @@ Page({
   },
 
   onSavePasswordChange(e) {
-    this.setData({ savePassword: e.detail.value.length > 0 })
+    this.setData({ savePassword: (e.detail.value || []).length > 0 })
   },
 
   togglePassword() {
@@ -74,19 +79,45 @@ Page({
     })
   },
 
+  /**
+   * 本地已有课程时让用户选择「覆盖导入」还是「合并新增」，
+   * 避免自动导入把用户手动添加的课程静默清空。
+   * @returns {Promise<'replace'|'merge'|null>} null 表示用户取消
+   */
+  chooseImportMode() {
+    const existingCount = util.getCourses().length
+    if (existingCount === 0) return Promise.resolve(IMPORT_MODE_REPLACE)
+
+    return new Promise((resolve) => {
+      wx.showModal({
+        title: '已存在课程数据',
+        content: `本地已有 ${existingCount} 门课程。\n「覆盖」将清空后重新导入；「合并」只追加新课程（保留手动添加的课程）。`,
+        confirmText: '覆盖导入',
+        cancelText: '合并新增',
+        success(res) {
+          resolve(res.confirm ? IMPORT_MODE_REPLACE : (res.cancel ? IMPORT_MODE_MERGE : null))
+        },
+        fail() {
+          resolve(null)
+        }
+      })
+    })
+  },
+
   async autoImport() {
     const { username, password, savePassword } = this.data
 
-    if (!username.trim()) {
+    if (!String(username || '').trim()) {
       this.showError('导入失败', '请输入学号')
       return
     }
-    if (!password.trim()) {
+    if (!String(password || '').trim()) {
       this.showError('导入失败', '请输入密码')
       return
     }
+    if (this.data.importing) return
 
-    // 保存/清除密码
+    // 保存/清除账号密码
     if (savePassword) {
       wx.setStorageSync('savedUsername', username)
       wx.setStorageSync('savedPassword', password)
@@ -95,104 +126,153 @@ Page({
       wx.removeStorageSync('savedPassword')
     }
 
+    const mode = await this.chooseImportMode()
+    if (!mode) return
+
     this.setData({ importing: true, importStep: 1 })
 
     try {
       // Step 1: 检查服务器
       const online = await api.checkHealth()
-      if (!online) throw new Error('服务器未连接，请确保 server/server.js 已启动')
+      if (!online) throw new Error('服务器暂时不可用，请稍后重试或改用「手动粘贴」导入')
       this.setData({ importStep: 2 })
 
       // Step 2-3: 登录并获取成绩
-      const result = await api.fetchGrades(username.trim(), password.trim())
+      const result = await api.fetchGrades(String(username).trim(), String(password).trim())
       this.setData({ importStep: 3 })
 
       if (!result.courses || result.courses.length === 0) {
-        throw new Error('未查询到成绩数据')
+        throw new Error('未查询到成绩数据，请确认账号下已出成绩')
       }
 
       // Step 4: 导入成绩
-      const imported = this._importCourses(result.courses)
+      const imported = this._importCourses(result.courses, mode)
       this.setData({ importStep: 4 })
+
+      if (imported.count === 0) {
+        this.showError('没有可导入的课程', `查询到 ${result.courses.length} 门成绩，但都已存在于本地，未做改动。`)
+        return
+      }
 
       this.setData({
         parseResult: {
           show: true,
-          count: imported,
+          count: imported.count,
+          skipped: imported.skipped,
           items: result.courses.slice(0, 10).map(c => ({
             name: c.name,
-            score: c.score,
+            scoreText: this._formatScoreText(c.score),
             credits: c.credits
           }))
         }
       })
 
-      wx.showToast({ title: `成功导入${imported}门课程`, icon: 'success' })
-      wx.setStorageSync('showRewardAfterImport', true)
+      wx.showToast({ title: `成功导入${imported.count}门课程`, icon: 'success' })
       setTimeout(() => { wx.switchTab({ url: '/pages/index/index' }) }, 2000)
 
     } catch (err) {
-      this.showError('导入失败', err.message || '导入过程出错')
+      this.showError('导入失败', this._buildErrorMessage(err))
     } finally {
       this.setData({ importing: false, importStep: 0 })
     }
   },
 
-  _importCourses(courses) {
-    const existingCourses = this.data.clearExisting ? [] : util.getCourses()
-    const existingNames = new Set(existingCourses.map(c => c.name))
-    let importCount = 0
+  _formatScoreText(score) {
+    if (score === undefined || score === null || score === '') return '--'
+    return String(score)
+  },
+
+  _buildErrorMessage(err) {
+    let msg = (err && err.message) || '导入过程出错'
+    if (err && err.scope === 'login-lock' && err.retryAfter !== undefined) {
+      const wait = Number(err.retryAfter) || 60
+      const waitText = wait >= 60 ? `${Math.ceil(wait / 60)} 分钟` : `${wait} 秒`
+      msg += `\n\n连续失败次数过多，已临时禁止登入：请 ${waitText}后重试。`
+    } else if (err && err.remainingAttempts !== undefined) {
+      msg += `\n\n连续失败 5 次将临时禁止登入，还可尝试 ${err.remainingAttempts} 次。`
+    }
+    return msg
+  },
+
+  /**
+   * 自动导入（教务系统接口返回的原始课程）
+   * @param {Array} courses 服务端返回的课程
+   * @param {'replace'|'merge'} mode 数据处理方式
+   */
+  _importCourses(courses, mode) {
+    const existingCourses = mode === IMPORT_MODE_REPLACE ? [] : util.getCourses()
+    const existingKeys = new Set(existingCourses.map(c => this._courseKey(c)))
+    let count = 0
+    let skipped = 0
 
     for (const item of courses) {
-      if (existingNames.has(item.name)) continue
-      existingNames.add(item.name)
+      if (!item || typeof item !== 'object') { skipped++; continue }
+
+      const name = String(item.name || '').trim()
+      const credits = util.toCredits(item.credits)
+      // 课程名或学分缺失的记录无法参与绩点计算，直接跳过并计数
+      if (!name || credits <= 0) { skipped++; continue }
+
+      const semester = util.normalizeSemester(item.semester)
+      const key = this._courseKey({ name, semester })
+      // 同名课程可能出现在不同学期，去重键必须带上学期
+      if (existingKeys.has(key)) { skipped++; continue }
+      existingKeys.add(key)
 
       const course = {
         id: util.generateId(),
-        name: item.name,
-        credits: Number(item.credits) || 0,
-        semester: item.semester || '未知学期',
+        name,
+        credits,
+        semester,
         type: item.courseType || ''
       }
 
-      // 解析成绩
+      // 解析成绩：百分制优先，其次中文/字母等级
       const scoreNum = parseFloat(item.score)
       if (!isNaN(scoreNum) && scoreNum >= 0 && scoreNum <= 100) {
         course.score = scoreNum
-        course.gpa = item.gpa ? parseFloat(item.gpa) : util.scoreToGPA(scoreNum)
+        course.gpa = item.gpa !== undefined && item.gpa !== '' && !isNaN(parseFloat(item.gpa))
+          ? parseFloat(item.gpa)
+          : util.scoreToGPA(scoreNum)
       } else {
         const grade = util.normalizeGrade(item.score)
-        if (!grade) continue
+        if (!grade) { skipped++; continue }
         course.grade = grade
         course.gpa = util.gradeToGPA(grade)
       }
 
       existingCourses.push(course)
-      importCount++
+      count++
     }
 
-    if (importCount > 0) {
-      util.saveCourses(existingCourses, `自动导入${importCount}门课程`)
+    if (count > 0) {
+      util.saveCourses(existingCourses, mode === IMPORT_MODE_REPLACE
+        ? `重新导入${count}门课程`
+        : `新增导入${count}门课程`)
       util.saveHistory({
         type: 'import',
-        course: { name: `自动导入${importCount}门课程` },
+        course: { name: mode === IMPORT_MODE_REPLACE ? `重新导入${count}门课程` : `导入${count}门课程` },
         time: new Date().toISOString()
       })
     }
 
-    return importCount
+    return { count, skipped }
+  },
+
+  _courseKey(course) {
+    return `${String(course.name || '').trim()}|${util.normalizeSemester(course.semester)}`
   },
 
   // ==================== 手动粘贴 ====================
   onScoreInput(e) {
     this.setData({
       scoreText: e.detail.value,
-      parseResult: { show: false, count: 0, items: [] }
+      parseResult: { show: false, count: 0, items: [], skipped: 0 }
     })
   },
 
   onClearExistingChange(e) {
-    this.setData({ clearExisting: e.detail.value.length > 0 })
+    this.setData({ clearExisting: (e.detail.value || []).length > 0 })
   },
 
   copyLink() {
@@ -206,7 +286,7 @@ Page({
 
   parseAndImport() {
     var scoreText = this.data.scoreText
-    if (!scoreText.trim()) {
+    if (!scoreText || !scoreText.trim()) {
       this.showError('导入失败', '输入框为空，请先复制成绩单内容后粘贴到输入框中。')
       return
     }
@@ -224,14 +304,27 @@ Page({
         return
       }
 
-      var importCount = this._importScores(scores, this.data.clearExisting)
+      var result = this._importScores(scores, this.data.clearExisting)
+
+      if (result.count === 0) {
+        this.showError('没有可导入的课程', '解析到 ' + scores.length + ' 门成绩，但都与本地已有课程重复。如需覆盖，请勾选「清除已导入成绩」后重试。')
+        return
+      }
 
       this.setData({
-        parseResult: { show: true, count: importCount, items: scores.slice(0, 10) }
+        parseResult: {
+          show: true,
+          count: result.count,
+          skipped: result.skipped,
+          items: scores.slice(0, 10).map(function(item) {
+            return Object.assign({}, item, {
+              scoreText: item.score !== undefined ? String(item.score) : (item.grade || '--')
+            })
+          })
+        }
       })
 
-      wx.showToast({ title: '成功导入' + importCount + '门课程', icon: 'success' })
-      wx.setStorageSync('showRewardAfterImport', true)
+      wx.showToast({ title: '成功导入' + result.count + '门课程', icon: 'success' })
       setTimeout(function() { wx.switchTab({ url: '/pages/index/index' }) }, 1500)
 
     } catch (err) {
@@ -255,12 +348,16 @@ Page({
     var headers = lines[headerLine].split('\t').map(function(h) { return h.trim() })
     var colMap = {}
     headers.forEach(function(h, i) {
-      if (h.indexOf('课程名称') !== -1) colMap.name = i
-      else if (h === '成绩') colMap.score = i
-      else if (h === '学分') colMap.credits = i
-      else if (h.indexOf('绩点') !== -1) colMap.gpa = i
-      else if (h.indexOf('开课学期') !== -1 || h.indexOf('学期') !== -1) colMap.semester = i
-      else if (h.indexOf('课程性质') !== -1) colMap.type = i
+      if (h.indexOf('课程名称') !== -1) { colMap.name = i; return }
+      if (h.indexOf('课程性质') !== -1) { colMap.type = i; return }
+      if (h.indexOf('学期') !== -1) { colMap.semester = i; return }
+      if (h.indexOf('绩点') !== -1) { colMap.gpa = i; return }
+      if (h.indexOf('学分') !== -1) { colMap.credits = i; return }
+      // 「成绩标志」「成绩备注」等列也含「成绩」二字，必须排除，否则会把成绩列错认成空列
+      if (h.indexOf('成绩') !== -1 && h.indexOf('标志') === -1) {
+        // 优先精确的「成绩」列；只有没有精确列时才用「总成绩」这类模糊匹配
+        if (h === '成绩' || colMap.score === undefined) colMap.score = i
+      }
     })
 
     if (colMap.name === undefined || colMap.score === undefined || colMap.credits === undefined) {
@@ -268,8 +365,8 @@ Page({
     }
 
     var scores = []
-    for (var i = headerLine + 1; i < lines.length; i++) {
-      var cells = lines[i].split('\t').map(function(c) { return c.trim() })
+    for (var j = headerLine + 1; j < lines.length; j++) {
+      var cells = lines[j].split('\t').map(function(c) { return c.trim() })
       if (cells.length < 3) continue
 
       var courseName = cells[colMap.name]
@@ -284,7 +381,7 @@ Page({
       var credits = parseFloat(creditsStr)
       if (isNaN(credits) || credits <= 0) continue
 
-      var course = { name: courseName, credits: credits, semester: semester || '未知学期' }
+      var course = { name: courseName, credits: credits, semester: util.normalizeSemester(semester) }
 
       var scoreNum = parseFloat(scoreStr)
       if (!isNaN(scoreNum) && scoreNum >= 0 && scoreNum <= 100) {
@@ -304,40 +401,50 @@ Page({
 
   _importScores(scores, clearExisting) {
     var existingCourses = clearExisting ? [] : util.getCourses()
-    var existingNames = new Set(existingCourses.map(function(c) { return c.name }))
-    var importCount = 0
+    var existingKeys = new Set(existingCourses.map(c => this._courseKey(c)))
+    var count = 0
+    var skipped = 0
 
-    scores.forEach(function(score) {
-      if (!existingNames.has(score.name)) {
-        existingNames.add(score.name)
-        var course = {
-          id: util.generateId(),
-          name: score.name,
-          credits: score.credits,
-          semester: score.semester
-        }
-        if (score.score !== undefined) {
-          course.score = score.score
-          course.gpa = score.gpa !== undefined ? score.gpa : util.scoreToGPA(score.score)
-        } else if (score.grade) {
-          course.grade = score.grade
-          course.gpa = score.gpa !== undefined ? score.gpa : util.gradeToGPA(score.grade)
-        }
-        if (score.type) course.type = score.type
-        existingCourses.push(course)
-        importCount++
+    scores.forEach((score) => {
+      var name = String(score.name || '').trim()
+      var credits = util.toCredits(score.credits)
+      if (!name || credits <= 0) { skipped++; return }
+
+      var semester = util.normalizeSemester(score.semester)
+      var key = this._courseKey({ name: name, semester: semester })
+      // 去重键带上学期：同名课程在不同学期（如 体育/体育）应分别保留
+      if (existingKeys.has(key)) { skipped++; return }
+      existingKeys.add(key)
+
+      var course = {
+        id: util.generateId(),
+        name: name,
+        credits: credits,
+        semester: semester
       }
+      if (score.score !== undefined) {
+        course.score = score.score
+        course.gpa = score.gpa !== undefined ? score.gpa : util.scoreToGPA(score.score)
+      } else if (score.grade) {
+        course.grade = score.grade
+        course.gpa = score.gpa !== undefined ? score.gpa : util.gradeToGPA(score.grade)
+      }
+      if (score.type) course.type = score.type
+      existingCourses.push(course)
+      count++
     })
 
-    if (importCount > 0) {
-      util.saveCourses(existingCourses, clearExisting ? '重新导入' + importCount + '门课程' : '导入' + importCount + '门课程')
+    if (count > 0) {
+      util.saveCourses(existingCourses, clearExisting
+        ? '重新导入' + count + '门课程'
+        : '导入' + count + '门课程')
       util.saveHistory({
         type: 'import',
-        course: { name: (clearExisting ? '重新导入' : '手动导入') + importCount + '门课程' },
+        course: { name: (clearExisting ? '重新导入' : '手动导入') + count + '门课程' },
         time: new Date().toISOString()
       })
     }
-    return importCount
+    return { count, skipped }
   },
 
   // ==================== 通用 ====================

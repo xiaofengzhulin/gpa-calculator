@@ -1,6 +1,17 @@
 // pages/index/index.js
 const util = require('../../utils/util.js')
 
+// 学期下拉的固定选项（手动添加课程时常用）
+const BASE_SEMESTERS = ['大一上', '大一下', '大二上', '大二下', '大三上', '大三下', '大四上', '大四下']
+
+// 课程成绩展示文案：0 分是合法成绩，不能用 `score || grade` 判断（0 会被当成 false）
+const formatScore = (course) => {
+  const hasScore = course.score !== undefined && course.score !== null && course.score !== ''
+  if (hasScore) return String(course.score)
+  if (course.grade) return String(course.grade)
+  return '--'
+}
+
 Page({
   data: {
     courses: [],
@@ -31,9 +42,8 @@ Page({
     scoreTypeIndex: 0,
     grades: ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'],
     gradeIndex: 0,
-    semesters: ['大一上', '大一下', '大二上', '大二下', '大三上', '大三下', '大四上', '大四下'],
-    semesterIndex: 0,
-    showRewardModal: false
+    semesters: BASE_SEMESTERS,
+    semesterIndex: 0
   },
 
   onLoad() {
@@ -46,12 +56,22 @@ Page({
 
   onShow() {
     this.loadCourses()
+  },
 
-    // 导入成绩后弹出赞赏码
-    if (wx.getStorageSync('showRewardAfterImport')) {
-      wx.removeStorageSync('showRewardAfterImport')
-      this.setData({ showRewardModal: true })
+  /**
+   * 学期下拉选项 = 固定选项 + 教务系统导入的真实学期（如 2024-2025-1）
+   * 否则编辑导入的课程时，学期会被强行改成「大一上」。
+   */
+  buildSemesterOptions(courses) {
+    const extras = []
+    for (let i = 0; i < courses.length; i++) {
+      const semester = courses[i] && courses[i].semester
+      if (semester && !BASE_SEMESTERS.includes(semester) && !extras.includes(semester)) {
+        extras.push(semester)
+      }
     }
+    extras.sort()
+    return BASE_SEMESTERS.concat(extras)
   },
 
   loadCourses() {
@@ -62,33 +82,43 @@ Page({
 
     const semesterSet = new Set()
     for (let i = 0; i < included.length; i++) {
-      if (included[i].semester) semesterSet.add(included[i].semester)
+      const semester = included[i].semester
+      if (semester && semester !== util.UNKNOWN_SEMESTER) semesterSet.add(semester)
     }
     const availableSemesters = ['全部', ...Array.from(semesterSet).sort()]
 
-    const filterSemester = this.data.filterSemester
+    const filterSemester = availableSemesters.includes(this.data.filterSemester)
+      ? this.data.filterSemester
+      : '全部'
     const filteredCourses = filterSemester === '全部'
       ? included
       : included.filter(c => c.semester === filterSemester)
     const result = util.calculateGPA(filteredCourses)
-    const finalFilter = availableSemesters.includes(filterSemester) ? filterSemester : '全部'
+    const hasData = filteredCourses.length > 0
 
     const formatCourse = (course) => {
       const gpa = util.getCourseGPA(course)
-      return { ...course, gpa: gpa.toFixed(1), gpaColor: util.getGradeColor(gpa) }
+      return {
+        ...course,
+        gpa: gpa.toFixed(2),
+        gpaColor: util.getGradeColor(gpa),
+        scoreText: formatScore(course)
+      }
     }
 
     this.setData({
       courses: filteredCourses.map(formatCourse),
       excludedCourses: excluded.map(formatCourse),
       availableSemesters,
-      filterSemester: finalFilter,
+      filterSemester,
+      semesters: this.buildSemesterOptions(allCourses),
       currentGPAMethod: util.getGPAMethod(),
       gpa: result.gpa,
       totalCredits: result.totalCredits,
       earnedCredits: result.earnedCredits,
-      gradeLevel: util.getGradeLevel(Number(result.gpa)),
-      gradeColor: util.getGradeColor(Number(result.gpa))
+      // 没有课程时不能显示「不及格」，否则 0.00 会被误读成挂科
+      gradeLevel: hasData ? util.getGradeLevel(Number(result.gpa)) : '暂无数据',
+      gradeColor: hasData ? util.getGradeColor(Number(result.gpa)) : '#999'
     })
   },
 
@@ -116,7 +146,7 @@ Page({
       showModal: true,
       isEdit: false,
       editIndex: -1,
-      currentCourse: { name: '', credits: '', score: '', grade: '', semester: this.data.semesters[0] },
+      currentCourse: { name: '', credits: '', score: '', grade: '', semester: BASE_SEMESTERS[0] },
       scoreTypeIndex: 0,
       gradeIndex: 0,
       semesterIndex: 0
@@ -127,15 +157,27 @@ Page({
     const courseId = e.currentTarget.dataset.id
     const course = this.data.courses.find(c => c.id === courseId)
     if (!course) return
-    const isGradeType = course.grade && !course.score
+
+    const hasScore = course.score !== undefined && course.score !== null && course.score !== ''
+    const isGradeType = !hasScore && !!course.grade
+    const semesterOptions = this.data.semesters
+    const semesterIndex = Math.max(0, semesterOptions.indexOf(course.semester))
+    const gradeIndex = this.data.grades.indexOf(course.grade)
+
     this.setData({
       showModal: true,
       isEdit: true,
       editIndex: course.id,
-      currentCourse: { name: course.name, credits: course.credits, score: course.score || '', grade: course.grade || '', semester: course.semester },
+      currentCourse: {
+        name: course.name,
+        credits: course.credits,
+        score: hasScore ? course.score : '',
+        grade: course.grade || '',
+        semester: course.semester
+      },
       scoreTypeIndex: isGradeType ? 1 : 0,
-      gradeIndex: isGradeType ? this.data.grades.indexOf(course.grade) : 0,
-      semesterIndex: Math.max(0, this.data.semesters.indexOf(course.semester))
+      gradeIndex: gradeIndex >= 0 ? gradeIndex : 0,
+      semesterIndex
     })
   },
 
@@ -163,13 +205,15 @@ Page({
   },
 
   clearAll() {
-    if (this.data.courses.length === 0) {
+    // 注意：this.data.courses 只是当前学期筛选后的列表，判断要用全量数据
+    const allCourses = util.getCourses()
+    if (allCourses.length === 0) {
       wx.showToast({ title: '暂无数据', icon: 'none' })
       return
     }
     wx.showModal({
       title: '确认清空',
-      content: '确定要清空所有课程数据吗？此操作可以撤销。',
+      content: `确定要清空全部 ${allCourses.length} 门课程吗？此操作可在「历史」页恢复。`,
       success: (res) => {
         if (res.confirm) {
           util.saveCourses([], '清空所有课程')
@@ -193,14 +237,16 @@ Page({
   },
 
   includeExcludedCourse(e) {
-    const index = e.currentTarget.dataset.index
-    const course = this.data.excludedCourses[index]
+    const courseId = e.currentTarget.dataset.id
     const allCourses = util.getCourses()
-    const targetIndex = allCourses.findIndex(c => c.id === course.id)
-    if (targetIndex !== -1) {
-      allCourses[targetIndex] = util.includeCourse(allCourses[targetIndex])
-      util.saveCourses(allCourses, `加入课程: ${course.name}`)
+    const targetIndex = allCourses.findIndex(c => c.id === courseId)
+    if (targetIndex === -1) {
+      wx.showToast({ title: '课程不存在', icon: 'none' })
+      return
     }
+    const courseName = allCourses[targetIndex].name
+    allCourses[targetIndex] = util.includeCourse(allCourses[targetIndex])
+    util.saveCourses(allCourses, `加入课程: ${courseName}`)
     this.loadCourses()
     wx.showToast({ title: '已加入', icon: 'success' })
   },
@@ -246,19 +292,10 @@ Page({
     this.setData({ showModal: false })
   },
 
-  hideRewardModal() {
-    this.setData({ showRewardModal: false })
-  },
-
-  previewRewardImage() {
-    wx.previewImage({
-      urls: ['/images/reward.png'],
-      current: '/images/reward.png'
-    })
-  },
-
   onInputChange(e) {
-    this.setData({ [`currentCourse.${e.currentTarget.dataset.field}`]: e.detail.value })
+    const field = e.currentTarget.dataset.field
+    if (!field) return
+    this.setData({ [`currentCourse.${field}`]: e.detail.value })
   },
 
   onTypeChange(e) {
@@ -276,11 +313,15 @@ Page({
   saveCourse() {
     const { currentCourse, scoreTypeIndex, gradeIndex, semesterIndex, isEdit, editIndex } = this.data
 
-    if (!currentCourse.name.trim()) {
+    const name = String(currentCourse.name || '').trim()
+    if (!name) {
       wx.showToast({ title: '请输入课程名称', icon: 'none' })
       return
     }
-    if (!currentCourse.credits || Number(currentCourse.credits) <= 0) {
+
+    const credits = Number(currentCourse.credits)
+    // 注意 Number('abc') 是 NaN，NaN <= 0 为 false，必须显式判断 isFinite
+    if (!Number.isFinite(credits) || credits <= 0) {
       wx.showToast({ title: '请输入有效学分', icon: 'none' })
       return
     }
@@ -289,27 +330,32 @@ Page({
     // 编辑时保留原课程的课程性质与手动排除状态
     const originalCourse = isEdit ? courses.find(c => c.id === editIndex) : null
 
-    const course = {
-      id: isEdit ? editIndex : util.generateId(),
-      name: currentCourse.name.trim(),
-      credits: Number(currentCourse.credits),
-      semester: this.data.semesters[semesterIndex],
-      type: originalCourse ? (originalCourse.type || '') : ''
-    }
-    if (originalCourse && originalCourse.forceIncluded) course.forceIncluded = true
-    if (originalCourse && originalCourse.forceExcluded) course.forceExcluded = true
+    const course = originalCourse ? { ...originalCourse } : {}
+    course.id = isEdit ? editIndex : util.generateId()
+    course.name = name
+    course.credits = credits
+    course.semester = this.data.semesters[semesterIndex] || util.UNKNOWN_SEMESTER
 
     if (scoreTypeIndex === 0) {
-      const score = Number(currentCourse.score)
-      if (isNaN(score) || score < 0 || score > 100) {
+      // 空字符串会被 Number('') 转成 0，必须先判断是否真的填了成绩
+      const rawScore = String(currentCourse.score === undefined || currentCourse.score === null ? '' : currentCourse.score).trim()
+      const score = Number(rawScore)
+      if (rawScore === '' || !Number.isFinite(score) || score < 0 || score > 100) {
         wx.showToast({ title: '请输入有效成绩(0-100)', icon: 'none' })
         return
       }
+      delete course.grade
       course.score = score
       course.gpa = util.scoreToGPA(score)
     } else {
-      course.grade = this.data.grades[gradeIndex]
-      course.gpa = util.gradeToGPA(course.grade)
+      const grade = this.data.grades[gradeIndex]
+      if (!grade) {
+        wx.showToast({ title: '请选择等级成绩', icon: 'none' })
+        return
+      }
+      delete course.score
+      course.grade = grade
+      course.gpa = util.gradeToGPA(grade)
     }
 
     if (isEdit) {

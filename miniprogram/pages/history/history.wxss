@@ -1,4 +1,26 @@
 /* pages/history/history.wxss */
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clear-btn {
+  font-size: 26rpx;
+  color: #ff4d4f;
+  padding: 8rpx 20rpx;
+  border: 1rpx solid #ffccc7;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
+
+.no-record-hint {
+  text-align: center;
+  font-size: 26rpx;
+  color: #bbb;
+  padding: 20rpx 0;
+}
+
 .hint {
   font-size: 28rpx;
   color: #666;
@@ -79,6 +101,10 @@
 
 .snapshot-count {
   color: #666;
+}
+
+.snapshot-time {
+  color: #999;
 }
 
 .snapshot-arrow {
