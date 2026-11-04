@@ -47,9 +47,10 @@
   },
   "compileType": "miniprogram",
   "libVersion": "2.25.4",
-  "appid": "wxe071ce7f92759377",
+  "appid": "wxb95ba0831cf327c0",
   "projectname": "gpa-calculator",
   "condition": {},
   "simulatorPluginLibVersion": {},
-  "editorSetting": {}
+  "editorSetting": {},
+  "isGameTourist": false
 }
