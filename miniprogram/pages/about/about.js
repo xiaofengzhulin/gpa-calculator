@@ -1,12 +1,10 @@
 Page({
   data: {
-    version: '1.2.2',
+    version: '1.2.3',
     // 备案信息：法规要求在小程序显著位置展示
-    // 公安备案通过后，把 police 换成真实编号（如 蒙公网安备150104XXXXXXXX号）
-    // 并把 policeReady 改成 true 即可，无需再改页面
     icp: '蒙ICP备2026007686号-2',
-    police: '公安备案办理中',
-    policeReady: false
+    police: '蒙公网安备15010402000835号',
+    policeReady: true
   },
 
   copyFeedbackEmail() {

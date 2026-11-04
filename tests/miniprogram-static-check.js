@@ -155,6 +155,16 @@ check('README 版本 = about.js 版本', readmeVersion, aboutVersion)
 check('存在 CHANGELOG.md', hasChangelog, true)
 check('CHANGELOG 最新版本 = about.js 版本', changelogVersion, aboutVersion)
 
+// ==================== 8. 备案信息 ====================
+group('8. 备案信息')
+const aboutWxml = read(path.join(MP, 'pages', 'about', 'about.wxml'))
+check('关于页展示工信部备案号', aboutJs.includes('蒙ICP备2026007686号-2'), true)
+check('关于页展示公安备案号', aboutJs.includes('蒙公网安备15010402000835号'), true)
+check('公安备案号已标记为可用', /policeReady:\s*true/.test(aboutJs), true)
+check('不再有「备案办理中」占位', /备案办理中/.test(aboutJs), false)
+check('关于页有备案信息卡片', aboutWxml.includes('备案信息'), true)
+check('关于页有隐私说明', aboutWxml.includes('隐私说明'), true)
+
 // ==================== 汇总 ====================
 console.log(`\n${'='.repeat(46)}`)
 console.log(`通过 ${passed} 项，失败 ${failed} 项`)

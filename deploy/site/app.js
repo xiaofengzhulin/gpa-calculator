@@ -364,7 +364,7 @@
     html += '<tr><th>网站性质</th><td>个人非经营性网站</td></tr>'
     html += '<tr><th>服务器位置</th><td>中国 · 阿里云（北京）</td></tr>'
     html += '<tr><th>工信部备案号</th><td><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">蒙ICP备2026007686号-2</a></td></tr>'
-    html += '<tr><th>公安备案号</th><td id="about-police">备案办理中</td></tr>'
+    html += '<tr><th>公安备案号</th><td id="about-police"><a href="https://beian.mps.gov.cn/#/query/webSearch?code=15010402000835" target="_blank" rel="noopener noreferrer">蒙公网安备15010402000835号</a></td></tr>'
     html += '<tr><th>网站负责人</th><td>于铠歌</td></tr>'
     html += '<tr><th>联系邮箱</th><td><a href="mailto:2848801752@qq.com">2848801752@qq.com</a></td></tr>'
     html += '</table>'
